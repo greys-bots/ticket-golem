@@ -6,7 +6,7 @@ module.exports = {
 		if(!args[0]) return msg.channel.createMessage("Please provide a channel to post to");
 
 		var cfg = await bot.utils.getConfig(bot, msg.guild.id);
-		if(!cfg) return msg.channel.createMessage("Please run `tg!config setup` before doing this");
+		if(!cfg || !cfg.category_id) return msg.channel.createMessage("Please run `tg!config setup` before doing this");
 
 		var channel = msg.channelMentions.length > 0 ?
 				   msg.guild.channels.find(ch => ch.id == msg.channelMentions[0]) :

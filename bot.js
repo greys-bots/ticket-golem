@@ -163,7 +163,7 @@ bot.commands.help = {
 			embed = {
 				title: `Ticket Golem - help`,
 				description: ["I am a bot. Beep boop. I help with server support tickets.\n",
-							  "To get started please use `tg!setup`.",
+							  "To get started please use `tg!config setup`.",
 							  " After this, use `tg!post [channel]` or `tg!bind [channel] [messageID]` to set up the reaction for opening tickets.\n",
 							  "Users may have 5 tickets open at once. A max of 10 users can also be added to tickets by the bot- others will need to be added manually.\n",
 							  "When you're done with a ticket, `tg!archive` will archive it. `tg!delete` will delete it without a record.",

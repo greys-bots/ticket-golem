@@ -6,7 +6,7 @@ module.exports = {
 		if(!args[1]) return msg.channel.createMessage("Please provide the channel and message ID to bind the reaction to");
 
 		var cfg = await bot.utils.getConfig(bot, msg.guild.id);
-		if(!cfg) return msg.channel.createMessage("Please run `tg!config setup` before doing this");
+		if(!cfg || !cfg.category_id) return msg.channel.createMessage("Please run `tg!config setup` before doing this");
 
 		var channel = msg.guild.channels.find(ch => ch.id == args[0].replace(/[<#>]/g,"") || ch.name == args[0].toLowerCase());
 		if(!channel) return msg.channel.createMessage("Channel not found");
