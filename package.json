@@ -1,0 +1,18 @@
+{
+  "name": "ticket-golem",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dblite": "^1.1.3",
+    "dotenv": "^8.2.0",
+    "eris": "^0.11.1",
+    "eris-additions": "^1.3.0",
+    "node-fetch": "^2.6.0"
+  }
+}
