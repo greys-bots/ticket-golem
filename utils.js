@@ -17,7 +17,7 @@ module.exports = {
 	},
 	createConfig: async (bot, server, category, archives) => {
 		return new Promise(res => {
-			bot.db.query(`INSERT INTO configs (server_id, category_id) VALUES (?,?)`,[server, category, archives], (err, rows)=> {
+			bot.db.query(`INSERT INTO configs (server_id, category_id, archives_id) VALUES (?,?,?)`,[server, category, archives], (err, rows)=> {
 				if(err) {
 					console.log(err);
 					res(false);
