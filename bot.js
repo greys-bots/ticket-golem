@@ -46,10 +46,13 @@ const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 
 async function setup() {
 	bot.db.query(`CREATE TABLE IF NOT EXISTS configs (
-		id 			INTEGER PRIMARY KEY AUTOINCREMENT,
-		server_id	TEXT,
-		category_id	TEXT,
-		archives_id TEXT
+		id 				INTEGER PRIMARY KEY AUTOINCREMENT,
+		server_id		TEXT,
+		category_id		TEXT,
+		archives_id 	TEXT,
+		user_limit 		INTEGER,
+		ticket_limit 	INTEGER,
+		mod_only 		TEXT
 	)`)
 
 	bot.db.query(`CREATE TABLE IF NOT EXISTS posts (
@@ -67,7 +70,10 @@ async function setup() {
 		first_message 	TEXT,
 		opener 			TEXT,
 		users 			TEXT,
-		timestamp 		TEXT
+		name 			TEXT,
+		description 	TEXT,
+		timestamp 		TEXT,
+		closed 			INTEGER
 	)`)
 
 	var files = fs.readdirSync("./commands");
@@ -217,7 +223,7 @@ bot.on("messageReactionAdd", async (msg, emoji, user)=>{
 
 	if(bot.menus && bot.menus[msg.id] && bot.menus[msg.id].user == user) {
 		try {
-			await bot.menus[msg.id].execute(msg, emoji);
+			await bot.menus[msg.id].execute(bot, msg, emoji);
 		} catch(e) {
 			console.log(e);
 			writeLog(e);
@@ -225,28 +231,170 @@ bot.on("messageReactionAdd", async (msg, emoji, user)=>{
 		}
 	}
 
+	var cfg;
+	if(msg.channel.guild) cfg = await bot.utils.getConfig(bot, msg.channel.guild.id);
+	else return;
+
 	var tpost = await bot.utils.getPost(bot, msg.channel.guild.id, msg.channel.id, msg.id);
-	if(tpost) {
+	if(tpost && emoji.name == "✅") {
+		console.log(cfg);
 		await bot.removeMessageReaction(msg.channel.id, msg.id, emoji.name, user);
 		var ch = await bot.getDMChannel(user);
 		var tickets = await bot.utils.getTicketsByUser(bot, msg.channel.guild.id, user);
-		if(tickets && tickets.length >= 5) {
+		var limit = cfg.ticket_limit || 5;
+
+		if(tickets && limit > -1 && tickets.count >= limit) {
 			try {
-				return ch.createMessage("Couldn't open ticket: you already have 5 open for that server.")
+				await ch.createMessage("Couldn't open ticket; you already have " + tickets.count + " open for that server.")
 			} catch(e) {
 				console.log(e);
-				return;
 			}
+			return;
 		}
 		var us = await bot.utils.fetchUser(bot, user);
 		var ticket = await bot.utils.createTicket(bot, msg.channel.guild.id, us);
 		if(!ticket.hid) {
 			try {
-				ch.createMessage("Couldn't open your support ticket:\n"+ticket.err);
+				ch.createMessage("Couldn't open your support ticket. ERR:\n"+ticket.err);
 			} catch(e) {
 				console.log(e);
 				return;
 			}	
+		}
+	}
+
+	var ticket = await bot.utils.getTicketByFirstMessage(bot, msg.channel.guild.id, msg.channel.id, msg.id);
+	if(ticket) {
+		var member = msg.channel.guild.members.find(m => m.id == user);
+		if((cfg.mod_only && cfg.mod_only.includes("add") && !member.hasPermission("manageMessages")) || (!member.hasPermission("manageMessages") && user != ticket.opener.id)) {
+			try {
+				bot.removeMessageReaction(msg.channel.id, msg.id, emoji.name, user);
+			} catch(e) {
+				console.log(e);
+			}
+			return;
+		}
+		var message = await bot.getMessage(msg.channel.id, msg.id);
+		var embed = message.embeds[0];
+		if(!embed) embed = {
+			title: ticket.name,
+			description: ticket.description,
+			fields: [
+				{name: "Ticket Opener", value: `${ticket.opener.mention}`},
+				{name: "TIcket Users", value: ticket.users.map(u => u.mention).join("\n")},
+			],
+			color: 2074412,
+			footer: {
+				text: "Ticket ID: "+ticket.hid
+			},
+			timestamp: ticket.timestamp
+		}
+		try {
+			message.removeReaction(emoji.name, user);
+		} catch(e) {
+			console.log(e);
+		}
+
+		var resp;
+		switch(emoji.name) {
+			case "\u270f":
+				await msg.channel.createMessage([
+					"What would you like to edit?",
+					"```",
+					"1 - Ticket name",
+					"2 - Ticket description",
+					"```"
+				].join("\n"));
+				resp = await msg.channel.awaitMessages(m => m.author.id == user, {maxMatches: 1, time: 30000});
+				if(!resp || !resp[0]) return msg.channel.createMessage("ERR: Timed out.");
+				switch(resp[0].content) {
+					case "1":
+						await msg.channel.createMessage("Enter the new name. You have 1 minute to do this. The name must be " + (100-(ticket.hid.length+1)) + " characters or less. Cancel the action by typing `cancel`.");
+						resp = await msg.channel.awaitMessages(m => m.author.id == user, {maxMatches: 1, time: 60000});
+						if(!resp || !resp[0]) return m.channel.createMessage("ERR: Timed out.");
+						if(resp[0].content.toLowerCase() == "cancel") return msg.channel.createMessage("Action cancelled.");
+						if(resp[0].content.length > (100-(ticket.hid.length+1))) return msg.channel.createMessage("ERR: Name too long. Must be between 1 and " + (100-(ticket.hid.length+1)) +" characters in length.");
+
+						var scc = await bot.utils.editTicket(bot, msg.channel.guild.id, ticket.hid, "name", resp[0].content);
+						if(scc) msg.channel.createMessage("Ticket edited.");
+						else msg.channel.createMessage("Something went wrong.");
+						embed.title = resp[0].content;
+						message.edit({embed: embed});
+						try {
+							msg.channel.edit({name: `${ticket.hid}-${resp[0].content}`})
+						} catch(e) {
+							console.log(e);
+							msg.channel.createMessage("ERR: Couldn't edit the channel name. The ticket has still been edited, however.")
+						}
+						break;
+					case "2": 
+						await msg.channel.createMessage("Enter the new description. You have 5 minutes to do this. The description must be 1024 characters or less. Cancel the action by typing `cancel`.");
+						resp = await msg.channel.awaitMessages(m => m.author.id == user, {maxMatches: 1, time: 300000});
+						if(!resp || !resp[0]) return m.channel.createMessage("ERR: Timed out.");
+						if(resp[0].content.toLowerCase() == "cancel") return msg.channel.createMessage("Action cancelled.");
+						if(resp[0].content.length > 1024) return msg.channel.createMessage("ERR: Description too long. Must be between 1 and 1024 characters in length.");
+
+						var scc = await bot.utils.editTicket(bot, msg.channel.guild.id, ticket.hid, "description", resp[0].content);
+						if(scc) msg.channel.createMessage("Ticket edited.");
+						else msg.channel.createMessage("Something went wrong.");
+						embed.description = resp[0].content;
+						message.edit({embed: embed});
+						try {
+							msg.channel.edit({topic: resp[0].content})
+						} catch(e) {
+							console.log(e);
+							msg.channel.createMessage("ERR: Couldn't edit the channel topic. The ticket has still been edited, however.")
+						}
+						break;
+					default:
+						msg.channel.createMessage("ERR: Invalid input.");
+						break;
+				}
+				break;
+			case "❌":
+				await msg.channel.createMessage("Are you sure you want to close this ticket? (Y/N)\nNOTE: This will remove the ability to send messages; users involved will still see the ticket.");
+				resp = await msg.channel.awaitMessages(m => m.author.id == user, {maxMatches: 1, time: 30000});
+				if(!resp || !resp[0]) return msg.channel.createMessage("ERR: Timed out.");
+				if(["y","yes"].includes(resp[0].content.toLowerCase())) {
+					embed.color = parseInt("aa5555", 16);
+					embed.title = ticket.name + " (CLOSED)";
+					embed.footer = {text: `Ticket ID: ${ticket.hid} | This ticket has been closed.`}
+					message.edit({embed: embed});
+
+					try {
+						for(var i = 0; i < ticket.users.length; i++) {
+							await msg.channel.editPermission(ticket.users[i].id, 1024, 2048, "member");
+						}
+					} catch(e) {
+						console.log(e);
+						msg.channel.createMessage("Couldn't edit overrides for at least one user on the ticket. The ticket is closed, but can still be seen by some users.");
+					}
+
+					var scc = await bot.utils.editTicket(bot, msg.channel.guild.id, ticket.hid, "closed", true);
+					if(scc) msg.channel.createMessage("The ticket has been closed.");
+					else msg.channel.createMessage("The ticket has been closed; however, this could not be saved to the database. This ticket may still count towards the opener's open tickets.");
+				} else return msg.channel.createMessage("Action cancelled.");
+				break;
+			case "✅":
+				if(!ticket.closed) return msg.channel.createMessage("This ticket is already open.");
+				embed.color = parseInt("55aa55", 16);
+				embed.title = ticket.name;
+				embed.footer = {text: `Ticket ID: ${ticket.hid}`}
+				message.edit({embed: embed});
+
+				try {
+					for(var i = 0; i < ticket.users.length; i++) {
+						await msg.channel.editPermission(ticket.users[i].id, 1024, 0, "member");
+					}
+				} catch(e) {
+					console.log(e);
+					msg.channel.createMessage("Couldn't edit overrides for at least one user on the ticket. The ticket is closed, but can still be seen by some users.");
+				}
+
+				var scc = await bot.utils.editTicket(bot, msg.channel.guild.id, ticket.hid, "closed", false);
+				if(scc) msg.channel.createMessage("The ticket has been re-opened.");
+				else msg.channel.createMessage("The ticket has been closed; however, this could not be saved to the database. This ticket may not count towards the opener's open tickets.");
+				break;
 		}
 	}
 });
