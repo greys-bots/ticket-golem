@@ -13,6 +13,6 @@
     "dotenv": "^8.2.0",
     "eris": "^0.11.1",
     "eris-additions": "^1.3.0",
-    "node-fetch": "^2.6.0"
+    "node-fetch": "^2.6.1"
   }
 }
