@@ -1,3 +1,5 @@
 node_modules/
 .env
-data.sqlite
+*.sqlite
+tmp.js
+sqlite/
