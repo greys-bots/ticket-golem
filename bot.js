@@ -2,13 +2,15 @@ const Eris 		= require("eris-additions")(require("eris"));
 const dblite 	= require("dblite");
 const fs 		= require("fs");
 
+dblite.bin = './sqlite/sqlite3.exe';
+
 require('dotenv').config();
 
 const bot 	= new Eris(process.env.TOKEN, {restMode: true});
 
 bot.db		= dblite('data.sqlite',"-header");
 
-bot.utils = require('./utils')
+bot.utils 	= require('./utils')
 
 bot.chars = process.env.CHARS;
 bot.prefix = process.env.PREFIX;
@@ -45,44 +47,41 @@ const updateStatus = function(){
 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 
 async function setup() {
-	bot.db.query(`CREATE TABLE IF NOT EXISTS configs (
-		id 				INTEGER PRIMARY KEY AUTOINCREMENT,
-		server_id		TEXT,
-		category_id		TEXT,
-		archives_id 	TEXT,
-		user_limit 		INTEGER,
-		ticket_limit 	INTEGER,
-		mod_only 		TEXT
-	)`)
+	bot.db = require('./stores/__db')(bot);
 
-	bot.db.query(`CREATE TABLE IF NOT EXISTS posts (
-		id			INTEGER PRIMARY KEY AUTOINCREMENT,
-		server_id	TEXT,
-		channel_id	TEXT,
-		message_id	TEXT
-	)`)
+	files = fs.readdirSync("./events");
+	files.forEach(f => bot.on(f.slice(0,-3), (...args) => require("./events/"+f)(...args,bot)));
 
-	bot.db.query(`CREATE TABLE IF NOT EXISTS tickets (
-		id 				INTEGER PRIMARY KEY AUTOINCREMENT,
-		hid 			TEXT,
-		server_id 		TEXT,
-		channel_id		TEXT,
-		first_message 	TEXT,
-		opener 			TEXT,
-		users 			TEXT,
-		name 			TEXT,
-		description 	TEXT,
-		timestamp 		TEXT,
-		closed 			INTEGER
-	)`)
+	bot.utils = {};
+	files = fs.readdirSync("./utils");
+	files.forEach(f => Object.assign(bot.utils, require("./utils/"+f)));
 
-	var files = fs.readdirSync("./commands");
-	await Promise.all(files.map(f => {
-		bot.commands[f.slice(0,-3)] = require("./commands/"+f);
-		return new Promise((res,rej)=>{
-			setTimeout(res("a"),100)
-		})
-	})).then(()=> console.log("finished loading commands."));
+	files = recursivelyReadDirectory("./commands");
+
+	bot.modules = new Discord.Collection();
+	bot.mod_aliases = new Discord.Collection();
+	bot.commands = new Discord.Collection();
+	bot.aliases = new Discord.Collection();
+	for(f of files) {
+		var path_frags = f.replace("./commands/","").split(/(?:\\|\/)/);
+		var mod = path_frags.length > 1 ? path_frags[path_frags.length - 2] : "Unsorted";
+		var file = path_frags[path_frags.length - 1];
+		if(!bot.modules.get(mod.toLowerCase())) {
+			var mod_info = require(file == "__mod.js" ? f : f.replace(file, "__mod.js"));
+			bot.modules.set(mod.toLowerCase(), {...mod_info, name: mod, commands: new Discord.Collection()})
+			bot.mod_aliases.set(mod.toLowerCase(), mod.toLowerCase());
+			if(mod_info.alias) mod_info.alias.forEach(a => bot.mod_aliases.set(a, mod.toLowerCase()));
+		}
+		if(file == "__mod.js") continue;
+
+		mod = bot.modules.get(mod.toLowerCase());
+		if(!mod) {
+			console.log("Whoopsies");
+			continue;
+		}
+		
+		registerCommand({command: require(f), module: mod, name: file.slice(0, -3).toLowerCase()})
+	}
 }
 
 bot.asyncForEach = async (arr, bot, msg, args, cb) => {
@@ -97,98 +96,20 @@ bot.formatTime = (date) => {
 	return `${(date.getMonth()+1) < 10 ? "0"+(date.getMonth()+1) : (date.getMonth()+1)}.${(date.getDate()) < 10 ? "0"+(date.getDate()) : (date.getDate())}.${date.getFullYear()} at ${date.getHours() < 10 ? "0"+date.getHours() : date.getHours()}:${date.getMinutes() < 10 ? "0"+date.getMinutes() : date.getMinutes()}`
 }
 
-bot.parseCommand = async function(bot, msg, args, command) {
-	return new Promise(async (res,rej)=>{
-		var commands;
-		var cmd;
-		var name = "";
-		if(command) {
-			commands = command.subcommands || [];
-		} else {
-			commands = bot.commands;
-		}
+bot.parseCommand = async function(bot, msg, args) {
+	if(!args[0]) return undefined;
+	
+	var command = bot.commands.get(bot.aliases.get(args[0].toLowerCase()));
+	if(!command) return {command, nargs: args};
 
-		if(args[0] && commands[args[0].toLowerCase()]) {
-			cmd = commands[args[0].toLowerCase()];
-			name = args[0].toLowerCase();
-			args = args.slice(1);
-		} else if(args[0] && Object.values(commands).find(cm => cm.alias && cm.alias.includes(args[0].toLowerCase()))) {
-			cmd = Object.values(commands).find(cm => cm.alias && cm.alias.includes(args[0].toLowerCase()));
-			name = args[0].toLowerCase();
-			args = args.slice(1);
-		} else if(!cmd) {
-			res(undefined);
-		}
+	args.shift();
 
-		if(cmd && cmd.subcommands && args[0]) {
-			let data = await bot.parseCommand(bot, msg, args, cmd);
-			if(data) {
-				cmd = data[0]; args = data[1];
-				name += " "+data[2];
-			}
-		}
+	if(args[0] && command.subcommands && command.subcommands.get(command.sub_aliases.get(args[0].toLowerCase()))) {
+		command = command.subcommands.get(command.sub_aliases.get(args[0].toLowerCase()));
+		args.shift();
+	}
 
-		res([cmd, args, name]);
-	})
-}
-
-bot.commands.help = {
-	help: ()=> "Displays help embed.",
-	usage: ()=> [" - Displays help for all commands.",
-				" [command] - Displays help for specfic command."],
-	execute: async (bot, msg, args) => {
-		let cmd;
-		let names;
-		let embed;
-		if(args[0]) {
-			let dat = await bot.parseCommand(bot, msg, args);
-			if(dat) {
-				cmd = dat[0];
-				names = dat[2].split(" ");
-				var fields = [
-					{name: "**Usage**", value: `${cmd.usage().map(c => `**${bot.prefix + names.join(" ")}**${c}`).join("\n")}`},
-					{name: "**Aliases**", value: `${cmd.alias ? cmd.alias.join(", ") : "(none)"}`},
-					{name: "**Subcommands**", value: `${cmd.subcommands ?
-							Object.keys(cmd.subcommands).map(sc => `**${bot.prefix}${sc}** - ${cmd.subcommands[sc].help()}`).join("\n") : 
-							"(none)"}`}
-				];
-				if(cmd.desc) fields.push({name: "**Extra**", value: `${cmd.desc()}`});
-				embed = {
-					title: `Help | ${names.join(" - ").toLowerCase()}`,
-					description: `${cmd.help()}\n\n`,
-					fields: fields,
-					footer: {
-						icon_url: bot.user.avatarURL,
-						text: "Arguments like [this] are required, arguments like <this> are optional."
-					}
-				}
-			} else {
-				msg.channel.createMessage("Command not found.")
-			}
-		} else {
-			embed = {
-				title: `Ticket Golem - help`,
-				description: ["I am a bot. Beep boop. I help with server support tickets.\n",
-							  "To get started please use `tg!config setup`.",
-							  " After this, use `tg!post [channel]` or `tg!bind [channel] [messageID]` to set up the reaction for opening tickets.\n",
-							  "Users may have 5 tickets open at once. A max of 10 users can also be added to tickets by the bot- others will need to be added manually.\n",
-							  "When you're done with a ticket, `tg!archive` will archive it. `tg!delete` will delete it without a record.",
-							  " You can also just delete the channel if that is easier for you."].join(""),
-				fields: [
-					{name: "**Commands**", value: `${Object.keys(bot.commands)
-						.map(c => `**${bot.prefix + c}** - ${bot.commands[c].help()}`)
-						.join("\n")}`}
-				],
-				footer: {
-					icon_url: bot.user.avatarURL,
-					text: "Arguments like [this] are required, arguments like <this> are optional."
-				}
-			}
-		}
-
-		msg.channel.createMessage({embed: embed});
-	},
-	alias: ["h"]
+	return {command, nargs: args};
 }
 
 bot.on("ready",()=>{
