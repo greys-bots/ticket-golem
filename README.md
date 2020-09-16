@@ -22,6 +22,20 @@ To finish up, use `tg!post [channel]` in order to post the starter message in th
 
 Now you're all set!
 
+## Self hosting
+If you'd like to host the bot yourself, you're welcome to do so! However, keep in mind that updates to bot might break your setup.  
+That said, here's how to self host:
+
+1. Get SQLite3
+  - On Windows, you'll want sqlite-tools from [here](https://www.sqlite.org/download.html). Look under precompiled binaries.
+  - Windows users may also want to add the unzipped folder to their PATH. If you don't want to do this, you can make a folder called `sqlite` and drop `sqlite3.exe` in directly, then uncomment the line close to the top of `bot.js`;
+  - On Linux, you should be able to do `sudo apt install sqlite3`, or whatever you prefer to use for package installation.
+2. Make sure you have Node 12.0+ installed as well
+2. Use `npm install` in the root folder to install the bot's dependencies
+3. Create an app [here](https://discord.com/developers/applications) and grab the token
+4. Fill out the `example.env` and rename it to just `.env`
+5. Run `node bot` in the root folder to start the bot
+
 ## Getting Help
 To get info on the commands, use `tg!help` or `tg!help [commands]`.
 

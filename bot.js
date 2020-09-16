@@ -2,6 +2,10 @@ const Eris 		= require("eris-additions")(require("eris"));
 const dblite 	= require("dblite");
 const fs 		= require("fs");
 
+//uncomment the line below if your setup involves
+//getting the sqlite tools and putting them in /sqlite
+// dblite.bin = `${__dirname}/sqlite/sqlite3.exe`;
+
 require('dotenv').config();
 
 const bot 	= new Eris(process.env.TOKEN, {restMode: true});
