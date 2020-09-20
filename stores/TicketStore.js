@@ -109,7 +109,6 @@ class TicketStore extends Collection {
 
 				var users = [];
 				for(var u of ticket.users) {
-					console.log(u);
 					var user = await this.bot.users.fetch(u);
 					users.push(user);
 				}
@@ -308,7 +307,6 @@ class TicketStore extends Collection {
 			}
 
 			var resp;
-			console.log(react.emoji.name);
 			switch(react.emoji.name) {
 				case "✏️":
 					await react.users.remove(user);
