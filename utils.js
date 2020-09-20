@@ -1,379 +1,86 @@
+  
+const { Collection } = require('discord.js');
+const fs 			 = require('fs');
+
+const recursivelyReadDirectory = (dir) => {
+	var results = [];
+	var files = fs.readdirSync(dir, {withFileTypes: true});
+	for(file of files) {
+		if(file.isDirectory()) {
+			results = results.concat(recursivelyReadDirectory(dir+"/"+file.name));
+		} else {
+			results.push(dir+"/"+file.name);
+		}
+	}
+
+	return results;
+}
+
+const loadCommands = (path) => {
+	var modules = new Collection();
+	var mod_aliases = new Collection();
+	var commands = new Collection();
+	var aliases = new Collection();
+
+	var files = recursivelyReadDirectory(path);
+
+	for(f of files) {
+		var path_frags = f.replace(path, "").split(/(?:\\|\/)/);
+		var mod = path_frags.length > 1 ? path_frags[path_frags.length - 2] : "Unsorted";
+		var file = path_frags[path_frags.length - 1];
+		if(!modules.get(mod.toLowerCase())) {
+			var mod_info = require(file == "__mod.js" ? f : f.replace(file, "__mod.js"));
+			modules.set(mod.toLowerCase(), {...mod_info, name: mod, commands: new Collection()})
+			mod_aliases.set(mod.toLowerCase(), mod.toLowerCase());
+			if(mod_info.alias) mod_info.alias.forEach(a => mod_aliases.set(a, mod.toLowerCase()));
+		}
+		if(file == "__mod.js") continue;
+
+		mod = modules.get(mod.toLowerCase());
+		if(!mod) {
+			console.log("Whoopsies");
+			continue;
+		}
+
+		var command = require(f);
+		command.module = mod;
+		command.name = file.slice(0, -3).toLowerCase();
+		command = registerSubcommands(command, mod);
+		commands.set(command.name, command);
+		mod.commands.set(command.name, command);
+		aliases.set(command.name, command.name);
+		if(command.alias) command.alias.forEach(a => aliases.set(a, command.name));
+	}
+
+	return {modules, mod_aliases, commands, aliases};
+}
+
+const registerSubcommands = function(command, module, name) {	
+	if(command.subcommands) {
+		var subcommands = command.subcommands;
+		command.subcommands = new Collection();
+		Object.keys(subcommands).forEach(c => {
+			var cmd = subcommands[c];
+			cmd.name = `${command.name} ${c}`;
+			cmd.parent = command;
+			cmd.module = command.module;
+			if(!command.sub_aliases) command.sub_aliases = new Collection();
+			command.sub_aliases.set(c, c);
+			if(cmd.alias) cmd.alias.forEach(a => command.sub_aliases.set(a, c));
+			if(command.permissions && !cmd.permissions) cmd.permissions = command.permissions;
+			if(command.guildOnly != undefined && cmd.guildOnly == undefined)
+				cmd.guildOnly = command.guildOnly;
+			command.subcommands.set(c, cmd);
+		})
+	}
+	return command;
+}
+
 module.exports = {
-	//configs
-	getConfig: async (bot, server) => {
-		return new Promise(res => {
-			bot.db.query(`SELECT * FROM configs WHERE server_id=?`,[server],{
-				id: Number,
-				server_id: String,
-				category_id: String,
-				user_limit: Number,
-				ticket_limit: Number,
-				mod_only: val => val ? JSON.parse(val) : undefined
-			}, (err, rows)=> {
-				if(err) {
-					console.log(err);
-					res(undefined);
-				} else {
-					res(rows[0])
-				}
-			})
-		})
-	},
-	updateConfig: async (bot, server, data) => {
-		var config = await bot.utils.getConfig(bot, server);
-		return new Promise(res => {
-			if(config) {
-				bot.db.query(`UPDATE configs SET ${Object.keys(data).map((k) => k+"=?").join(",")} WHERE server_id=?`,[...Object.values(data), server], (err, rows)=> {
-					if(err) {
-						console.log(err);
-						res(false)
-					} else {
-						res(true)
-					}
-				})
-			} else {
-				bot.db.query(`INSERT INTO configs (server_id, category_id, archives_id, user_limit, ticket_limit, mod_only) VALUES (?,?,?,?,?,?)`,
-							 [server, data.category_id, data.archives_id, data.user_limit, data.ticket_limit, data.mod_only || []], (err, rows)=> {
-					if(err) {
-						console.log(err);
-						res(false);
-					} else {
-						res(true);
-					}
-				})
-			}
-		})
-	},
-
-	//tickets
-	getTickets: async (bot, server) => {
-		return new Promise(res => {
-			bot.db.query(`SELECT * FROM tickets WHERE server_id=?`,[server],{
-				id: Number,
-				hid: String,
-				server_id: String,
-				channel_id: String,
-				first_message: String,
-				opener: String,
-				users: JSON.parse,
-				name: String,
-				description: String,
-				timestamp: String,
-				closed: Boolean
-			}, async (err, rows)=> {
-				if(err) {
-					console.log(err);
-					res(undefined);
-				} else {
-					var tickets = rows;
-					if(!tickets[0]) return res(undefined);
-
-					await bot.asyncForEach(tickets, bot, null, null, async (bot, msg, args, ticket, ind) => {
-						var users = [];
-						await Promise.all(ticket.users.map(async u => {
-							var us = await bot.utils.fetchUser(bot, u);
-							users.push(us);
-							return Promise.resolve()
-						}))
-						tickets[ind].userids = tickets[ind].users;
-						tickets[ind].users = users;
-						var opener = await bot.utils.fetchUser(bot, ticket.opener);
-						tickets[ind].opener = opener;
-					})
-
-					res(tickets);
-				}
-			})
-		})
-	},
-	getTicketsByUser: async (bot, server, user) => {
-		return new Promise(async res => {
-			var tickets = await bot.utils.getTickets(bot, server); //so all the user info is there
-			if(!tickets) return res(undefined);
-			tickets = tickets.filter(t => t.opener.id == user);
-			if(!tickets[0]) res(undefined);
-			else {
-				tickets.count = tickets.filter(t => !t.closed).length;
-				res(tickets);
-			}
-		})
-	},
-	getTicket: async (bot, server, hid) => {
-		return new Promise(res => {
-			bot.db.query(`SELECT * FROM tickets WHERE server_id=? AND hid=?`,[server, hid],{
-				id: Number,
-				hid: String,
-				server_id: String,
-				channel_id: String,
-				first_message: String,
-				opener: String,
-				users: JSON.parse,
-				name: String,
-				description: String,
-				timestamp: String,
-				closed: Boolean
-			}, async (err, rows)=> {
-				if(err) {
-					console.log(err);
-					res(undefined);
-				} else {
-					var ticket = rows[0];
-					if(!ticket) return res(undefined);
-
-					var users = [];
-					await Promise.all(ticket.users.map(async u => {
-						var us = await bot.utils.fetchUser(bot, u);
-						users.push(us);
-						return Promise.resolve()
-					}))
-					ticket.userids = ticket.users;
-					ticket.users = users;
-					var opener = await bot.utils.fetchUser(bot, ticket.opener);
-					ticket.opener = opener;
-
-					res(ticket);
-				}
-			})
-		})
-	},
-	getTicketByChannel: async (bot, server, channel) => {
-		return new Promise(res => {
-			bot.db.query(`SELECT * FROM tickets WHERE server_id=? AND channel_id=?`,[server, channel],{
-				id: Number,
-				hid: String,
-				server_id: String,
-				channel_id: String,
-				first_message: String,
-				opener: String,
-				users: JSON.parse,
-				name: String,
-				description: String,
-				timestamp: String,
-				closed: Boolean
-			}, async (err, rows)=> {
-				if(err) {
-					console.log(err);
-					res(undefined);
-				} else {
-					var ticket = rows[0];
-					if(!ticket) return res(undefined);
-
-					var users = [];
-					await Promise.all(ticket.users.map(async u => {
-						var us = await bot.utils.fetchUser(bot, u);
-						users.push(us);
-						return Promise.resolve()
-					}))
-					ticket.userids = ticket.users;
-					ticket.users = users;
-					var opener = await bot.utils.fetchUser(bot, ticket.opener);
-					ticket.opener = opener;
-
-					res(ticket);
-				}
-			})
-		})
-	},
-	getTicketByFirstMessage: async (bot, server, channel, message) => {
-		return new Promise(res => {
-			bot.db.query(`SELECT * FROM tickets WHERE server_id=? AND channel_id=? AND first_message=?`,[server, channel, message],{
-				id: Number,
-				hid: String,
-				server_id: String,
-				channel_id: String,
-				first_message: String,
-				opener: String,
-				users: JSON.parse,
-				name: String,
-				description: String,
-				timestamp: String,
-				closed: Boolean
-			}, async (err, rows)=> {
-				if(err) {
-					console.log(err);
-					res(undefined);
-				} else {
-					var ticket = rows[0];
-					if(!ticket) return res(undefined);
-
-					var users = [];
-					for(var i = 0; i < ticket.users.length; i++) {
-						var us = await bot.utils.fetchUser(bot, ticket.users[i]);
-						users.push(us);
-					}
-
-					ticket.userids = ticket.users;
-					ticket.users = users;
-					var opener = await bot.utils.fetchUser(bot, ticket.opener);
-					ticket.opener = opener;
-
-					res(ticket);
-				}
-			})
-		})
-	},
-	createTicket: async (bot, server, user) => {
-		return new Promise(async res => {
-			var cfg = await bot.utils.getConfig(bot, server);
-			if(!cfg) return res({err: "No config registered; please run `hub!ticket config setup` first."});
-			var code = bot.utils.genCode(bot.chars);
-			var time = new Date();
-			try {
-				var channel = await bot.createChannel(server, `ticket-${code}`, 0, "", {
-					topic: `Ticket ${code}`,
-					parentID: cfg.category_id
-				})
-				channel.editPermission(user.id, 1024, 0, "member");
-			} catch(e) {
-				console.log(e);
-				return res({err: "Couldn't create and/or edit channel; please make sure I have permission and there are channel slots left."});
-			}
-
-			try {
-				var message = await bot.createMessage(channel.id, {
-					content: `Thank you for opening a ticket, ${user.mention}. You can chat with support staff here.\nReact with :pencil2: to edit this ticket, or :x: to close it. If the ticket is closed, react with :white_check_mark: to re-open it.`,
-					embed: {
-						title: "Untitled Ticket",
-						description: "(no description)",
-						fields: [
-							{name: "Ticket Opener", value: user.mention},
-							{name: "Ticket Users", value: user.mention}
-						],
-						color: 2074412,
-						footer: {
-							text: "Ticket ID: "+code
-						},
-						timestamp: time
-					}
-				})
-			} catch(e) {
-				console.log(e);
-				return res({err: "Could not send message; please make sure I have permission."})
-			}
-
-			try {
-				message.pin();
-			} catch(e) {
-				console.log(e);
-				channel.createMessage("Could not pin the above message; please make sure I have permission. Also, it's preferable that you pin it yourself now.");
-			}
-
-			try {
-				["\u270f","❌", "✅"].forEach(r => message.addReaction(r));
-			} catch(e) {
-				console.log(e);
-				bot.createMessage(channel.id, "Could not add one or more reaction to the ticket post. You will have to manually react to it if you wish to edit or close this ticket.")
-			}
-
-			var scc = await bot.utils.addTicket(bot, code, server, channel.id, message.id, user.id, [user.id], time.toISOString());
-			if(scc) res({hid: code});
-			else res({err: "Couldn't insert data"})
-		})
-	},
-	addTicket: async (bot, hid, server, channel, message, opener, users, timestamp) => {
-		return new Promise(res => {
-			bot.db.query(`INSERT INTO tickets (hid, server_id, channel_id, first_message, opener, users, name, description, timestamp, closed) VALUES (?,?,?,?,?,?,?,?,?,?)`,
-						 [hid, server, channel, message, opener, users, "Untitled Ticket", "(no description)", timestamp, 0], (err, rows)=> {
-				if(err) {
-					console.log(err);
-					res(false)
-				} else {
-					res(true);
-				}
-			})
-		})
-	},
-	deleteTicket: async (bot, server, channel) => {
-		return new Promise(res => {
-			bot.db.query(`DELETE FROM tickets WHERE server_id = ? AND channel_id = ?`,[server, channel], (err, rows)=> {
-				if(err) {
-					console.log(err);
-					res(false)
-				} else res(true)
-			})
-		})
-	},
-	editTicket: async (bot, server, ticket, key, val) => {
-		return new Promise(res => {
-			bot.db.query(`UPDATE tickets SET ?=? WHERE server_id = ? AND hid = ?`,[key, val, server, ticket], (err, rows)=> {
-				if(err) {
-					console.log(err);
-					res(false);
-				} else res(true);
-			})
-		})
-	},
-
-	//posts
-	addPost: async (bot, server, channel, message) => {
-		return new Promise(res => {
-			bot.db.query(`INSERT INTO posts (server_id, channel_id, message_id) VALUES (?,?,?)`,[server, channel, message], (err, rows) => {
-				if(err) {
-					console.log(err);
-					res(false)
-				} else res(true)
-			})
-		})
-	},
-	getPosts: async (bot, server) => {
-		return new Promise(res => {
-			bot.db.query(`SELECT * FROM posts WHERE server_id = ?`,[server],{
-				id: Number,
-				server_id: String,
-				channel_id: String,
-				message_id: String
-			}, (err, rows)=> {
-				if(err) {
-					console.log(err);
-					res(undefined);
-				} else {
-					res(rows)
-				}
-			})
-		})
-	},
-	getPost: async (bot, server, channel, message) => {
-		return new Promise(res => {
-			bot.db.query(`SELECT * FROM posts WHERE server_id = ? AND channel_id = ? AND message_id = ?`,[server, channel, message],{
-				id: Number,
-				server_id: String,
-				channel_id: String,
-				message_id: String
-			}, (err, rows)=> {
-				if(err) {
-					console.log(err);
-					res(undefined);
-				} else {
-					res(rows[0])
-				}
-			})
-		})
-	},
-	deletePost: async (bot, server, channel, message) => {
-		return new Promise(res => {
-			bot.db.query(`DELETE FROM posts WHERE server_id = ? AND channel_id = ? AND message_id = ?`,[server, channel, message], (err, rows)=> {
-				if(err) {
-					console.log(err);
-					res(false)
-				} else {
-					res(true)
-				}
-			})
-		})
-	},
-
-	//general utils
-	fetchUser: async (bot, id) => {
-		return new Promise(async res => {
-			try {
-				var user = await bot.getRESTUser(id);
-			} catch(e) {
-				console.log(e);
-				var user = undefined;
-			}
-			res(user);
-		})
-	},
+	recursivelyReadDirectory,
+	registerSubcommands,
+	loadCommands,
+	
 	genCode: (table, num = 4) =>{
 		var codestring="";
 		var codenum=0;
@@ -475,22 +182,120 @@ module.exports = {
 				res(false);
 			}
 		})
-	}
+	},
 
-
-	//search
-	searchTickets: async (bot, server, query) => {
-		var tickets = await bot.utils.getTickets(bot, server);
+	getConfirmation: async (bot, msg, user) => {
 		return new Promise(res => {
-			if(!tickets || !tickets[0]) return res(undefined);
-			res(tickets.filter(r => r.name.toLowerCase().includes(query) || r.description.toLowerCase().includes(query)));
+
+			function msgListener(message) {
+				if(message.channel.id != msg.channel.id ||
+				   message.author.id != user.id) return;
+
+				clearTimeout(timeout);
+				bot.removeListener('message', msgListener);
+				bot.removeListener('messageReactionAdd', reactListener);
+				switch(message.content.toLowerCase()) {
+					case 'y':
+					case 'yes':
+					case '✅':
+						return res({confirmed: true, message});
+						break;
+					default:
+						return res({confirmed: false, message, msg: 'Action cancelled.'});
+						break;
+				}
+			}
+
+			function reactListener(react, ruser) {
+				if(react.message.channel.id != msg.channel.id ||
+				   ruser.id != user.id) return;
+
+				clearTimeout(timeout);
+				bot.removeListener('message', msgListener);
+				bot.removeListener('messageReactionAdd', reactListener);
+				switch(react.emoji.name) {
+					case '✅':
+						return res({confirmed: true, react});
+						break;
+					default:
+						return res({confirmed: false, react, msg: 'Action cancelled.'});
+						break;
+				}
+			}
+
+			const timeout = setTimeout(async () => {
+				bot.removeListener('message', msgListener);
+				bot.removeListener('messageReactionAdd', reactListener);
+				res({confirmed: false, msg: 'Action timed out.'})
+			}, 30000);
+
+			bot.on('message', msgListener);
+			bot.on('messageReactionAdd', reactListener);
 		})
 	},
-	searchTicketsFromUser: async (bot, server, id, query) => {
-		var tickets = await bot.utils.getTicketsByUser(bot, server, id);
+	handleChoices: async (bot, msg, user, choices) => {
+		/*
+			example usage pseudo-code:
+			choices = [
+				{
+					accepted: ['y', 'yes', 'yeah', '✅'],
+					name: 'yes',
+					msg: 'You picked `yes`.'
+				},
+				{
+					accepted: ['n', 'no', 'nah', '❌'],
+					name: 'no',
+					msg: 'You picked `no`.'
+				}
+			]
+			chosen = await handleChoices(...args);
+			switch(chosen.name) {
+				case 'yes':
+				case 'no':
+					return chosen.msg;
+					break;
+				case 'invalid':
+					return 'You picked something else.';
+					break;
+				default:
+					return 'You picked nothing.'
+					break;
+			}
+		*/
 		return new Promise(res => {
-			if(!tickets || !tickets[0]) return res(undefined);
-			res(tickets.filter(r => r.name.toLowerCase().includes(query) || r.description.toLowerCase().includes(query)));
+
+			function msgListener(message) {
+				if(message.channel.id != msg.channel.id ||
+				   message.author.id != user.id) return;
+
+				clearTimeout(timeout);
+				bot.removeListener('message', msgListener);
+				bot.removeListener('messageReactionAdd', reactListener);
+				var choice = choices.find(c => c.accepted.includes(message.content.toLowerCase()));
+				if(choice) return res({...choice, message});
+				else return res({name: 'invalid', message});
+			}
+
+			function reactListener(react, ruser) {
+				if(react.message.channel.id != msg.channel.id ||
+				   ruser.id != user.id) return;
+
+				clearTimeout(timeout);
+				bot.removeListener('message', msgListener);
+				bot.removeListener('messageReactionAdd', reactListener);
+				var choice = choices.find(c => c.accepted.includes(react.emoji.name));
+				if(choice) return res({...choice, react});
+				else return res({name: 'invalid', react});
+			}
+
+			const timeout = setTimeout(async () => {
+				bot.removeListener('message', msgListener);
+				bot.removeListener('messageReactionAdd', reactListener);
+				res({name: 'none', msg: 'Action timed out.'})
+			}, 30000);
+
+			bot.on('message', msgListener);
+			bot.on('messageReactionAdd', reactListener);
 		})
 	}
 }

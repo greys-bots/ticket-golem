@@ -1,31 +1,29 @@
 module.exports = {
-	help: ()=> "Bind the ticket starter reaction to a custom message",
-	usage: ()=> [" [channel] [messageID] - Bind the reaction to a message"],
-	desc: ()=> "The channel can be a #mention, ID, or channel-name",
+	help: ()=> "Bind the ticket starter reaction to a custom message.",
+	usage: ()=> [" [channel] [messageID] - Bind the reaction to a message."],
+	desc: ()=> "The channel can be a #mention, ID, or channel-name.",
 	execute: async (bot, msg, args) => {
-		if(!args[1]) return msg.channel.createMessage("Please provide the channel and message ID to bind the reaction to");
+		if(!args[1]) return "Please provide the channel and message ID to bind the reaction to.";
 
-		var cfg = await bot.utils.getConfig(bot, msg.guild.id);
-		if(!cfg || !cfg.category_id) return msg.channel.createMessage("Please run `tg!config setup` before doing this");
-
-		var channel = msg.guild.channels.find(ch => ch.id == args[0].replace(/[<#>]/g,"") || ch.name == args[0].toLowerCase());
-		if(!channel) return msg.channel.createMessage("Channel not found");
-		var message = await bot.getMessage(channel.id, args[1]);
-		if(!message) return msg.channel.createMessage("Message not found");
+		var cfg = await bot.stores.configs.get(msg.guild.id);
+		if(!cfg || !cfg.category_id) return `Please run \`${bot.prefix}setup\` before doing this.`;
 
 		try {
-			message.addReaction("✅")
+			var channel = msg.guild.channels.cache.find(ch => ch.id == args[0].replace(/[<#>]/g,"") || ch.name == args[0].toLowerCase());
+			if(!channel) return "Channel not found.";
+			var message = await channel.messages.fetch(args[1]);
+			if(!message) return "Message not found.";
+			await message.react("✅")
+
+			await bot.stores.posts.create(msg.guild.id, message.channel.id, message.id);
 		} catch(e) {
 			console.log(e);
-			return msg.channel.createMessage("ERR: Couldn't add the reaction; aborting");
-		}
+			return "Error:\n"+(e.message || e);
+		}	
 
-		var scc = await bot.utils.addPost(bot, msg.guild.id, message.channel.id, message.id);
-		if(scc) msg.channel.createMessage("Reaction bound!");
-		else msg.channel.createMessage("Something went wrong")		
-
+		return "Reaction bound.";
 	},
-	permissions: ["manageMessages"],
+	permissions: ["MANAGE_MESSAGES"],
 	guildOnly: true,
 	alias: ["b"]
 }

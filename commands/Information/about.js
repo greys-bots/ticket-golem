@@ -9,8 +9,7 @@ module.exports = {
 						 "\nMy prefix is `tg!`."+
 						 "\nHere's some more about me:",
 			fields: [
-				{name: "Creators", value: "[greysdawn](https://github.com/greysdawn) | GreySkies#9950", inline: true},
-				{name: "Invite", value: `[Click here.](${bot.invlink})`, inline: true},
+				{name: "Creators", value: "[greysdawn](https://github.com/greysdawn) | GreySkies#9950"},
 				{name: "Support Server", value: "[Click here.](https://discord.gg/EvDmXGt)", inline: true},
 				{name: "GitHub Repo", value: "[Click here.](https://github.com/greys-bots/ticket-golem)", inline: true},
 				{name: "Stats", value: `Guilds: ${bot.guilds.size} | Users: ${bot.users.size}`},

@@ -1,28 +1,29 @@
 module.exports = {
-	help: ()=> "Unbind the ticket starter reaction from a custom message",
-	usage: ()=> [" [channel] [messageID] - Unbind the reaction from a message"],
-	desc: ()=> "The channel can be a #mention, ID, or channel-name",
+	help: ()=> "Unbind the ticket starter reaction from a custom message.",
+	usage: ()=> [" [channel] [messageID] - Unbind the reaction from a message."],
+	desc: ()=> "The channel can be a #mention, ID, or channel-name.",
 	execute: async (bot, msg, args) => {
-		if(!args[1]) return msg.channel.createMessage("Please provide the channel and message ID to unbind the reaction from");
+		if(!args[1]) return "Please provide the channel and message ID to unbind the reaction from.";
 
-		var channel = msg.guild.channels.find(ch => ch.id == args[0].replace(/[<#>]/g,"") || ch.name == args[0].toLowerCase());
-		if(!channel) return msg.channel.createMessage("Channel not found");
-		var message = await bot.getMessage(channel.id, args[1]);
-		if(!message) return msg.channel.createMessage("Message not found");
+		var cfg = await bot.stores.configs.get(msg.guild.id);
+		if(!cfg || !cfg.category_id) return `Please run \`${bot.prefix}setup\` before doing this.`;
 
 		try {
-			message.removeReaction("✅")
+			var channel = msg.guild.channels.cache.find(ch => [ch.id, ch.name].includes(args[0].replace(/[<#>]/g,"")));
+			if(!channel) return "Channel not found.";
+			var message = await channel.messages.fetch(args[1]);
+			if(!message) return "Message not found.";
+			await message.reactions.cache.get("✅").remove();
+
+			await bot.stores.posts.delete(msg.guild.id, message.channel.id, message.id);
 		} catch(e) {
 			console.log(e);
-			return msg.channel.createMessage("ERR: Couldn't remove the reaction; aborting");
-		}
+			return "Error:\n"+(e.message || e);
+		}	
 
-		var scc = await bot.utils.deletePost(bot, msg.guild.id, message.channel.id, message.id);
-		if(scc) msg.channel.createMessage("Reaction unbound!");
-		else msg.channel.createMessage("Something went wrong")		
-
+		return "Reaction unbound.";	
 	},
-	permissions: ["manageMessages"],
+	permissions: ["MANAGE_MESSAGES"],
 	guildOnly: true,
 	alias: ["ub","u"]
 }

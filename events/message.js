@@ -6,7 +6,7 @@ const WELCOMES = [
 
 module.exports = async (msg, bot)=>{
 	if(msg.author.bot) return;
-	if(!new RegExp(`^(${bot.prefix.join("|")})`,"i").test(msg.content.toLowerCase())) {
+	if(!new RegExp(`^(${bot.prefix})`,"i").test(msg.content.toLowerCase())) {
 		var thanks = msg.content.match(/^(thanks? ?(you)?|ty),? ?(tg|ticket golem)/i);
 		if(thanks) return await msg.channel.send(WELCOMES[Math.floor(Math.random() * WELCOMES.length)]);
 		return;
@@ -17,19 +17,16 @@ module.exports = async (msg, bot)=>{
 		`Message: ${msg.content}`,
 		`--------------------`
 	];
-	let args = msg.content.replace(new RegExp(`^(${bot.prefix.join("|")})`,"i"), "").split(" ");
+	let args = msg.content.replace(new RegExp(`^(${bot.prefix})`,"i"), "").split(" ");
 	if(!args[0]) args.shift();
-	if(!args[0]) return msg.channel.send("Baaa!");
+	if(!args[0]) return msg.channel.send("Hello there.");
 	var config = {};
 	var usages = {whitelist: [], blacklist: []};
-	if(msg.guild) {
-		config = await bot.stores.configs.get(msg.guild.id);
-		usages = await bot.stores.usages.get(msg.guild.id);
-	}
+	if(msg.guild) config = await bot.stores.configs.get(msg.guild.id);
 
 	let {command, nargs} = await bot.parseCommand(bot, msg, args);
 	if(!command) {
-		await msg.channel.send("Command not found!");
+		await msg.channel.send("Command not found.");
 		log.push('- Command Not Found -')
 	}
 
@@ -43,26 +40,6 @@ module.exports = async (msg, bot)=>{
 		console.log("- Missing Permissions -")
 		return await msg.channel.send('You do not have permission to use that command.');
 	}
-	check = await bot.utils.isDisabled(bot, msg.guild.id, command, command.name);
-	if(check && !(["enable","disable"].includes(command.name))) {
-		console.log("- Command is disabled -")
-		return await msg.channel.send("That command is disabled.");
-	}
-
-	if(usages && !msg.member.permissions.has('MANAGE_MESSAGES')) {
-		switch(usages.type) {
-			case 1:
-				if(!usages.whitelist.includes(msg.author.id) &&
-				   !usages.whitelist.find(x => msg.member.roles.cache.has(x)))
-					return await msg.channel.send("You have not been whitelisted to use this bot!");
-				break;
-			case 2:
-				if(usages.blacklist.includes(msg.author.id) ||
-				   usages.blacklist.find(x => msg.member.roles.cache.has(x)))
-					return await msg.channel.send("You have been blacklisted from using this bot!");
-				break;
-		}
-	}
 	
 	try {
 		var result = await command.execute(bot, msg, nargs, config);
@@ -70,7 +47,7 @@ module.exports = async (msg, bot)=>{
 		console.log(e.stack);
 		log.push(`Error: ${e.stack}`);
 		log.push(`--------------------`);
-		msg.channel.send('There was an error! D:')
+		await msg.channel.send('Error:\n'+(e.message || e))
 	}
 	console.log(log.join('\r\n'));
 	bot.writeLog(log.join('\r\n'));

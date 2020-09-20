@@ -1,8 +1,10 @@
 module.exports = {
 	help: ()=> "Displays help embed.",
-	usage: ()=> [" - Displays help for all commands.",
-				" [command] - Displays help for specfic command.",
-				" [command] [subcommand] - Displays help for a command's subcommand."],
+	usage: ()=> [
+		" - Displays help for all commands.",
+		" [command] - Displays help for specfic command.",
+		" [command] [subcommand] - Displays help for a command's subcommand."
+	],
 	execute: async (bot, msg, args) => {
 		if(!args[0]) {
 			var modules = bot.modules.map(m => m);

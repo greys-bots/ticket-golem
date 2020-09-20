@@ -1,10 +1,10 @@
 var fs = require('fs');
 var {Pool} = require('pg');
 
-module.exports = (bot) => {
+module.exports = async (bot) => {
 	const db = new Pool();
 
-	db.query(`
+	await db.query(`
 		CREATE TABLE IF NOT EXISTS configs (
 			id 				SERIAL PRIMARY KEY,
 			server_id		TEXT,
@@ -46,7 +46,7 @@ module.exports = (bot) => {
 	bot.stores = {};
 	var files = fs.readdirSync(__dirname);
 	for(var file of files) {
-		if(["__db.js"].includes(file)) continue;
+		if(!file.endsWith('.js') || ["__db.js"].includes(file)) continue;
 		var tmpname = file.replace(/store\.js/i, "");
 		var name =  tmpname[0].toLowerCase() + 
 				   (tmpname.endsWith("y") ?
@@ -58,9 +58,11 @@ module.exports = (bot) => {
 	}
 
 	files = fs.readdirSync(__dirname + '/migrations');
-	var version = await db.query(`SELECT * FROM extras WHERE key = 'version'`).rows[0]?.val || 0;
+	console.log(files);
+	var version = (await db.query(`SELECT * FROM extras WHERE key = 'version'`)).rows[0]?.val || -1;
 	if(files.length > version + 1) {
 		for(var i = version; i < files.length; i++) {
+			if(!files[i]) continue;
 			var migration = require(`${__dirname}/migrations/${files[i]}`);
 			await migration(bot, db);
 		}

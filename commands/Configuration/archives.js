@@ -2,17 +2,21 @@ module.exports = {
 	help: ()=> "Set server's archives channel.",
 	usage: ()=> [" [channel ID] - Sets the archives channel for this server."],
 	execute: async (bot, msg, args) => {
-		var cfg = await bot.utils.getConfig(bot, msg.guild.id);
+		var cfg = await bot.stores.configs.get(msg.guild.id);
 
-		var archives = msg.guild.channels.find(c => c.id == args[0].replace(/[<#>]/g,"") || c.name == args[0].toLowerCase());
-		if(!archives) return msg.channel.createMessage("Channel not found.");
+		var archives = msg.guild.channels.cache.find(c => c.id == args[0].replace(/[<#>]/g,"") || c.name == args[0].toLowerCase());
+		if(!archives) return "Channel not found.";
 
-		var scc = await bot.utils.updateConfig(bot, msg.guild.id, {archives_id: archives.id});
-
-		if(scc) msg.channel.createMessage("Config set.");
-		else msg.channel.createMessage("Something went wrong.");
+		try {
+			if(!cfg) await bot.stores.configs.create(msg.guild.id, {archives_id: archives ? archives.id : null});
+			else await bot.stores.configs.update(msg.guild.id, {archives_id: archives ? archives.id : null});
+		} catch(e) {
+			return "Error:\n"+e;
+		}
+		
+		return "Config set."
 	},
-	permissions: ["manageGuild"],
+	permissions: ["MANAGE_GUILD"],
 	guildOnly: true,
 	alias: ["a","arch","archive","channel"]
 }
