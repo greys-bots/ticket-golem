@@ -49,8 +49,8 @@ module.exports = {
 		
 		try {
 			await message.edit({embed: {
-				title: ticket.name,
-				description: ticket.description,
+				title: ticket.name || "Untitled Ticket",
+				description: ticket.description || "(no description)",
 				fields: [
 					{name: "Ticket Opener", value: message.embeds[0].fields[0].value},
 					{name: "Ticket Users", value: ticket.users.length > 20 ? ticket.users.slice(0, 21).map(u => `${u}`).join("\n") + `\nAnd ${ticket.users.length - 20} more...` : ticket.users.map(u => `${u}`).join("\n")}

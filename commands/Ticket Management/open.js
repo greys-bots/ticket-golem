@@ -33,8 +33,8 @@ module.exports = {
 
 			if(tmessage) {
 				var embed = {
-					title: ticket.name,
-					description: ticket.description,
+					title: `${ticket.name || "Untitled ticket"}`,
+					description: ticket.description || "(no description)",
 					fields: [
 						{name: "Ticket Opener", value: `${ticket.opener}`},
 						{name: "TIcket Users", value: ticket.users.map(u => `${u}`).join("\n")},

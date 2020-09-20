@@ -57,6 +57,8 @@ module.exports = {
 		var embed = new MessageEmbed({
 			title: "Ticket Archive",
 			fields: [
+				{name: "Ticket name", value: ticket.name || "Untitled Ticket"},
+				{name: "Ticket description", value: ticket.description || "(no description)"},
 				{name: "Time opened", value: bot.formatTime(new Date(ticket.timestamp))},
 				{name: "Opener", value: `${ticket.opener.username}#${ticket.opener.discriminator} (${ticket.opener.id})`},
 				{name: "Users involved", value: ticket.users.map(u => `${u.username}#${u.discriminator} (${u.id})`).join("\n")},
@@ -67,6 +69,8 @@ module.exports = {
 		});
 
 		var file = new MessageAttachment(Buffer.from([
+			`Ticket name: ${ticket.name || "Untitled Ticket"}\r\n`,
+			`Ticket description: ${ticket.description || "(no description)"}\r\n`,
 			`Ticket opened: ${bot.formatTime(new Date(ticket.timestamp))}\r\n`,
 			`Ticket opener: ${ticket.opener.username}#${ticket.opener.discriminator} (${ticket.opener.id})\r\n`,
 			`Users involved:\r\n${ticket.users.map(u => `${u.username}#${u.discriminator} (${u.id})`).join("\r\n")}`,"\r\n------\r\n"].join("")+data.reverse().join("\r\n------\r\n")

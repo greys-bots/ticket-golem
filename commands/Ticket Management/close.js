@@ -39,15 +39,15 @@ module.exports = {
 
 			if(tmessage) {
 				var embed = {
-					title: ticket.name,
-					description: ticket.description,
+					title: `${ticket.name || "Untitled ticket"} (CLOSED)`,
+					description: ticket.description || "(no description)",
 					fields: [
 						{name: "Ticket Opener", value: `${ticket.opener}`},
 						{name: "TIcket Users", value: ticket.users.map(u => `${u}`).join("\n")},
 					],
 					color: parseInt("55aa55", 16),
 					footer: {
-						text: "Ticket ID: "+ticket.hid
+						text: `Ticket ID: ${ticket.hid} | This ticket has been closed.`
 					},
 					timestamp: ticket.timestamp
 				}

@@ -58,7 +58,6 @@ module.exports = async (bot) => {
 	}
 
 	files = fs.readdirSync(__dirname + '/migrations');
-	console.log(files);
 	var version = (await db.query(`SELECT * FROM extras WHERE key = 'version'`)).rows[0]?.val || -1;
 	if(files.length > version + 1) {
 		for(var i = version; i < files.length; i++) {

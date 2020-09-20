@@ -320,9 +320,9 @@ class TicketStore extends Collection {
 					var message = await msg.channel.send({embed: {
 						description: "Choose what to edit.",
 						fields: [
-							{name: ":one: Name", value: "Change the ticket name."},
-							{name: ":two: Description", value: "Change the ticket description."},
-							{name: '❌ Cancel', value: "Cancel editing"}
+							{name: "1️⃣ Name", value: "Change the ticket name."},
+							{name: "2️⃣ Description", value: "Change the ticket description."},
+							{name: "❌ Cancel", value: "Cancel editing."}
 						],
 						footer: {
 							text: "Use reactions or type 'one,' 'two,' or 'cancel' to make your choice."
@@ -400,7 +400,7 @@ class TicketStore extends Collection {
 					if(confirmation.msg) return msg.channel.send(confirmation.msg);
 					
 					embed.color = parseInt("aa5555", 16);
-					embed.title = ticket.name + " (CLOSED)";
+					embed.title = `${ticket.name || "Untitled Ticket"} (CLOSED)`;
 					embed.footer = {text: `Ticket ID: ${ticket.hid} | This ticket has been closed.`}
 
 					try {
@@ -415,7 +415,7 @@ class TicketStore extends Collection {
 
 						await this.update(msg.channel.guild.id, ticket.hid, {closed: true});
 						await msg.reactions.removeAll();
-						["✏️","🔓", "✅"].forEach(r => msg.react(r));
+						["🔓", "✅"].forEach(r => msg.react(r));
 					} catch(e) {
 						console.log(e);
 						msg.channel.send(`Error:\n${e.message || e}`);
@@ -430,7 +430,7 @@ class TicketStore extends Collection {
 							return msg.channel.send("You do not have permission to open this ticket.");
 
 					embed.color = parseInt("55aa55", 16);
-					embed.title = ticket.name;
+					embed.title = ticket.name || "Untitled Ticket";
 					embed.footer = {text: `Ticket ID: ${ticket.hid}`}
 
 					try {
