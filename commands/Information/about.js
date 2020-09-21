@@ -12,7 +12,7 @@ module.exports = {
 				{name: "Creators", value: "[greysdawn](https://github.com/greysdawn) | GreySkies#9950"},
 				{name: "Support Server", value: "[Click here.](https://discord.gg/EvDmXGt)", inline: true},
 				{name: "GitHub Repo", value: "[Click here.](https://github.com/greys-bots/ticket-golem)", inline: true},
-				{name: "Stats", value: `Guilds: ${bot.guilds.size} | Users: ${bot.users.size}`},
+				{name: "Stats", value: `Guilds: ${bot.guilds.cache.size} | Users: ${bot.users.cache.size}`},
 				{name: "Want to support my creators?", value: "[Patreon](https://patreon.com/greysdawn) | [Ko-Fi](https://ko-fi.com/greysdawn)"}
 			]
 
