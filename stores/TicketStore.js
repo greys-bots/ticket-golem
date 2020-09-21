@@ -195,7 +195,12 @@ class TicketStore extends Collection {
 				var tickets = data.rows;
 
 				if(query.opener) tickets = tickets.filter(x => x.opener == query.opener);
-				if(query.text) tickets = tickets.filter(x => x.name.toLowerCase().includes(query.text) || x.description.toLowerCase().includes(query.text))
+				if(query.text) {
+					tickets = tickets.filter(x => {
+						return (x.name || "untitled ticket").toLowerCase().includes(query.text) ||
+						       (x.description || "(no description)").toLowerCase().includes(query.text)
+					});
+				}
 
 				for(var i = 0; i < tickets.length; i++) {
 					var users = [];

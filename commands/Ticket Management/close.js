@@ -20,7 +20,7 @@ module.exports = {
 		if(confirmation.msg) return confirmation.msg;
 
 		try {
-			await bot.stores.tickets.update(m.channel.guild.id, this.data.hid, {closed: true});
+			await bot.stores.tickets.update(msg.channel.guild.id, ticket.hid, {closed: true});
 		} catch(e) {
 			return "Error:\n"+e;
 		}
@@ -30,10 +30,9 @@ module.exports = {
 			var tmessage = await channel.messages.fetch(ticket.first_message);
 
 			for(var i = 0; i < ticket.users.length; i++) {
-				await tmessage.channel.edit({
-					permissionOverwrites:[
-						{id: this.data.users[i].id, allow: 1024, deny: 2048, type: "member"}
-					]
+				await tmessage.channel.updateOverwrite(ticket.users[i].id, {
+					'VIEW_CHANNEL': true,
+					'SEND_MESSAGES': false
 				});
 			}
 
