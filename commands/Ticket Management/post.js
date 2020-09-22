@@ -3,37 +3,28 @@ module.exports = {
 	usage: ()=> [" [channel] - Post the starter message."],
 	desc: ()=> "The channel can be a #mention, channel ID, or channel-name.",
 	execute: async (bot, msg, args) => {
-		if(!args[0]) return msg.channel.send("Please provide a channel to post to");
+		if(!args[0]) return "Please provide a channel to post to."
 
-		var cfg = await bot.utils.getConfig(bot, msg.guild.id);
-		if(!cfg || !cfg.category_id) return msg.channel.send("Please run `tg!config setup` before doing this");
+		var cfg = await bot.stores.configs.get(msg.guild.id);
+		if(!cfg?.category_id) return "Please run `tg!setup` before doing this.";
 
-		var channel = msg.channelMentions.length > 0 ?
-				   msg.guild.channels.find(ch => ch.id == msg.channelMentions[0]) :
-				   msg.guild.channels.find(ch => ch.id == args[0] || ch.name == args[0].toLowerCase());
-		if(!channel) return msg.channel.send("Channel not found");
+		var channel = msg.guild.channels.cache.find(ch => [ch.id, ch.name].includes(args[0].replace(/[<#>]/g, "").toLowerCase()));
+		if(!channel) return "Channel not found.";
 
 		try {
 			var message = await channel.send({embed: {
 				title: "Start Ticket",
-				description: "React to this post with ✅ to start a new ticket.\n\nNOTE: Users can have 5 tickets open at once.",
+				description: `React to this post with ✅ to start a new ticket.\n\nNOTE: Users can have ${cfg?.user_limit || 5} tickets open at once.`,
 				color: 2074412
 			}});
+			message.react("✅")
+			await bot.stores.posts.create(msg.guild.id, message.channel.id, message.id);
 		} catch(e) {
 			console.log(e.stack);
-			return msg.channel.send("ERR: \n"+e.message);
+			return "Error:\n"+(e.message || e);
 		}
 
-		try {
-			message.addReaction("✅")
-		} catch(e) {
-			console.log(e.stack);
-			return msg.channel.send("ERR: \n"+e.message);
-		}
-
-		var scc = await bot.utils.addPost(bot, msg.guild.id, message.channel.id, message.id);
-		if(scc) msg.channel.send("Post sent!");
-		else msg.channel.send("Something went wrong")
+		return "Post sent.";
 	},
 	permissions: ["MANAGE_MESSAGES"],
 	alias: ["p","send"],
