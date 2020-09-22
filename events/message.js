@@ -28,6 +28,9 @@ module.exports = async (msg, bot)=>{
 	if(!command) {
 		await msg.channel.send("Command not found.");
 		log.push('- Command Not Found -')
+		console.log(log.join("\r\n"));
+		bot.writeLog(log.join("\r\n"));
+		return;
 	}
 
 	if(!msg.guild && command.guildOnly) {

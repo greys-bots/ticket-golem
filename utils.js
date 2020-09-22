@@ -1,4 +1,3 @@
-  
 const { Collection } = require('discord.js');
 const fs 			 = require('fs');
 
@@ -166,7 +165,7 @@ module.exports = {
 	},
 	checkPermissions: async (bot, msg, cmd)=>{
 		return new Promise((res)=> {
-			if(cmd.permissions) res(msg.member.permissions.has(cmd.permissions))
+			if(cmd?.permissions) res(msg.member.permissions.has(cmd.permissions))
 			else res(true);
 		})
 	},
