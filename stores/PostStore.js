@@ -200,7 +200,12 @@ class PostStore extends Collection {
 
 
 				var message = await channel.send({
-					content: `Thank you for opening a ticket, ${user}. You can chat with support staff here.\nReact with :pencil2: to edit this ticket, or :x: to close it. If the ticket is closed, react with :white_check_mark: to re-open it.`,
+					content:
+						`Thank you for opening a ticket, ${user}. ` +
+						`You can chat with support staff here.\n` +
+						`React with :pencil2: to edit this ticket, or ` +
+						`:lock: to close it. If the ticket is closed, react with ` +
+						`:unlock: to re-open it. :white_check_mark: will archive the ticket.`,
 					embed: {
 						title: "Untitled Ticket",
 						description: "(no description)",

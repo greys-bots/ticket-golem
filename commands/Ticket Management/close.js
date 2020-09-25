@@ -53,13 +53,15 @@ module.exports = {
 				
 				await tmessage.edit({embed: embed});
 
-				await tmessage.reactions.cache.get("🔒").remove();
-				await tmessage.react("🔓");
+				await tmessage.reactions.removeAll();
+				["🔓", "✅"].forEach(r => tmessage.react(r));
 			}
 		} catch(e) {
 			console.log(e);
 			return "Error:\n"+e;
 		}
+
+		return "Ticket closed.";
 	},
 	alias: ["cls"],
 	guildOnly: true

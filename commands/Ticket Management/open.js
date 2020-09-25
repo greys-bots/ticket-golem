@@ -48,12 +48,14 @@ module.exports = {
 				await tmessage.edit({embed: embed});
 
 				await tmessage.reactions.cache.get("🔓").remove();
-				await tmessage.react("🔒");
+				["✏️","🔒", "✅"].forEach(r => tmessage.react(r));
 			}
 		} catch(e) {
 			console.log(e);
 			return "Error:\n"+e;
 		}
+
+		return "Ticket re-opened.";
 	},
 	alias: ["reopen"],
 	guildOnly: true
