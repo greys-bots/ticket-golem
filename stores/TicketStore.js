@@ -316,8 +316,8 @@ class TicketStore extends Collection {
 				case "✏️":
 					await react.users.remove(user);
 					if(ticket.closed) return;
-					if((cfg.mod_only?.find(cmd => ['rename', 'description'].includes(cmd)) && !msg.guild.member(user.id).permissions.has("MANAGE_CHANNELS")) ||
-						(msg.author.id != ticket.opener.id) && !member.permissions.has("MANAGE_CHANNELS"))
+					if((cfg.mod_only?.find(cmd => ['rename', 'description'].includes(cmd)) && !member.permissions.has("MANAGE_CHANNELS")) ||
+						(member.id != ticket.opener.id) && !member.permissions.has("MANAGE_CHANNELS"))
 							return user.send("You do not have permission to edit this ticket.");
 
 					var message = await msg.channel.send({embed: {
@@ -392,8 +392,8 @@ class TicketStore extends Collection {
 					break;
 				case "🔒":
 					await react.users.remove(user);
-					if((cfg.mod_only?.includes('close') && !msg.guild.member(user.id).permissions.has("MANAGE_CHANNELS")) ||
-						(msg.author.id != ticket.opener.id) && !msg.guild.member(user.id).permissions.has("MANAGE_CHANNELS"))
+					if((cfg.mod_only?.includes('close') && !member.permissions.has("MANAGE_CHANNELS")) ||
+						(member.id != ticket.opener.id) && !member.permissions.has("MANAGE_CHANNELS"))
 							return user.send("You do not have permission to close this ticket.");
 
 					var message = await msg.channel.send("Are you sure you want to close this ticket?\nNOTE: This will remove the ability to send messages; users involved will still see the ticket.");
@@ -428,8 +428,8 @@ class TicketStore extends Collection {
 					break;
 				case "🔓":
 					await react.users.remove(user);
-					if((cfg.mod_only?.find(cmd => ["open", "reopen"].includes(cmd)) && !msg.guild.member(user.id).permissions.has("MANAGE_CHANNELS")) ||
-						(msg.author.id != ticket.opener.id) && !msg.guild.member(user.id).permissions.has("MANAGE_CHANNELS"))
+					if((cfg.mod_only?.find(cmd => ["open", "reopen"].includes(cmd)) && !member.permissions.has("MANAGE_CHANNELS")) ||
+						(member.id != ticket.opener.id) && !member.permissions.has("MANAGE_CHANNELS"))
 							return user.send("You do not have permission to open this ticket.");
 
 					embed.color = parseInt("55aa55", 16);
@@ -458,7 +458,7 @@ class TicketStore extends Collection {
 					break;
 				case "✅":
 					await react.users.remove(user.id);
-					if(!msg.guild.member(user.id).permissions.has("MANAGE_CHANNELS"))
+					if(!member.permissions.has("MANAGE_CHANNELS"))
 						return user.send("You do not have permission to archive this ticket.");
 
 					var message = await msg.channel.send("Are you sure you want to archive this ticket?\nNOTE: This will delete the channel and send an archive to you.");
