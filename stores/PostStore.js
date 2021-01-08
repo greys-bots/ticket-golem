@@ -152,7 +152,6 @@ class PostStore extends Collection {
 
 	async handleReactions(react, user) {
 		return new Promise(async (res, rej) => {
-			if(this.bot.user.id == user.id) return res();
 			if(user.bot) return res();
 			if(react.emoji.name != "✅") return res();
 
@@ -178,7 +177,7 @@ class PostStore extends Collection {
 				return res();
 			}
 
-			var open = (await this.bot.stores.tickets.getByUser(msg.guild.id, user.id))?.filter(x => x.closed == false);
+			var open = (await this.bot.stores.tickets.getByUser(msg.guild.id, user.id));
 			if(open?.length >= cfg.ticket_limit) {
 				await user.send(`You already have ${open.length} ticket(s) open in that server. The current limit is ${cfg.ticket_limit}.`);
 				return res();

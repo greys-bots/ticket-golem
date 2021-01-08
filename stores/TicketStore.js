@@ -152,15 +152,15 @@ class TicketStore extends Collection {
 		})
 	}
 
-	async getByUser(server, user) {
+	async getByUser(server, opener) {
 		return new Promise(async (res, rej) => {
 			try {
-				var data = await this.db.query(`SELECT * FROM tickets WHERE server_id = $1 AND opener = $2`, [server, user]);
+				var data = await this.db.query(`SELECT * FROM tickets WHERE server_id = $1 AND opener = $2`, [server, opener]);
 			} catch(e) {
 				console.log(e);
 				return rej(e.message);
 			}
-			
+
 			if(data.rows?.[0]) {
 				var tickets = data.rows;
 
