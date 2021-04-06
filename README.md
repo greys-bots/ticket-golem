@@ -8,37 +8,55 @@ When a ticket is opened, a brand new channel is created. Ticket Golem uses membe
 
 Users can have 5 tickets open at once, to prevent spam. At the moment, 10 server members (not including the ticket's opener) can be added to tickets by the bot, with other members having to be manually added- in the future this will likely be a configurable option.
 
-## How do I get started?
+## Getting started
 First off, invite the bot using the link in the above section.
 
 After inviting them, make sure you create a category that you want tickets to go in. Here's a recommended setup:
-![Recommended category setup](https://cdn.discordapp.com/attachments/613904722398674944/649676171067260928/unknown.png)
+![A "tickets" category with "open-a-ticket" and "ticket-archives" as channels inside](https://cdn.discordapp.com/attachments/613904722398674944/649676171067260928/unknown.png)
 
-Where the `tickets` category is overall only visible to mods, and the `open-a-ticket` channel is visible to everyone. The latter is where you'll want to put the reaction post. Also make sure that Ticket Golem has the ability to `Manage Permissions` in that category- this permission can't be given with a normal invite link.
+Where the `tickets` category is overall only visible to mods, but the `open-a-ticket` channel is visible to everyone. The latter is where you'll want to put the reaction post. Also, **make sure that Ticket Golem has the ability to `Manage Permissions` in that category**- this permission can't be given with a normal invite link.
 
-Next, `tg!config setup`. Enter the name of the category (`tickets` in the above example) you want tickets to go in, then enter the name of the archives channel (`ticket-archives` above). If you'd like, you can skip the second part by typing `skip`, which will just make the bot DM you archives instead.
+Next, `tg!setup`. Enter the name of the category (`tickets` in the above example) you want tickets to go in, then enter the name of the archives channel (`ticket-archives` above). If you'd like, you can skip the second part by typing `skip`, which will just make the bot DM you archives instead.
 
 To finish up, use `tg!post [channel]` in order to post the starter message in the given channel. If you want a custom message, send that in the channel first, and then use `tg!bind [channel] [message ID]` to bind the reaction.
 
 Now you're all set!
 
+## Features
+### (Mostly) unlimited tickets
+TG has no hard limits on tickets. The only limit is the number of channels your server can have, which is 500 total and 50 per category. If you run out of ticket space in the category, you can createa a second one and set the config to create tickets there instead.
+
+### Configurable limits
+While TG has no hard limits for the total number of tickets opened in a server, server owners can set limits for how many tickets users can have open at once. This is to prevent spam and to keep mods from being overwhelmed with tickets. You can also configure how many users can be added to a ticket via commands, and disable this entirely. Check out the `ticketlimit`, `userlimit`, and `disable`/`enable` commands for more info.
+
+Deleting and archiving tickets will allow users to open more of them, so you shouldn't have to worry about limits as long as tickets are properly taken care of.
+
+### Channel deletion handling
+Deleting a ticket's channel will automatically delete it from the tickets database. This is a quick shortcut to the `tg!delete` command, in case you have a lot of tickets to delete at once.
+
+### Ticket names and descriptions
+Users can edit their ticket to change the name or set a description. This will also change the channel's name/description for easier finding.
+
+This comes with the added bonus of being able to search through tickets using `tg!find`!
+
+### Reaction-based usage
+Much of TG's ticket management features are reaction-based, making closing/opening, archiving, and deleting tickets all a matter of a few clicks. You can use commands for most of it as well, making the bot accessible for users that can't or prefer not to use reactions.
+
 ## Self hosting
-If you'd like to host the bot yourself, you're welcome to do so! However, keep in mind that updates to bot might break your setup.  
-That said, here's how to self host:
+### Requirements
+**Node:** 14.0 or above  
+**Postgres:** any version  
+**Tech:** a VPS or computer that's often online  
+You'll also want some technical know-how, especially if you intend to make changes
 
-1. Get PostgreSQL and set it up on your computer
-2. Make sure you have Node 12.0+ installed as well
-2. Use `npm install` in the root folder to install the bot's dependencies
-3. Create an app [here](https://discord.com/developers/applications) and grab the token
-4. Fill out the `example.env` and rename it to just `.env`
-5. Run `node bot` in the root folder to start the bot
+### Steps
+(Assuming you have all the requirements set up)
+1. Download this repository and unzip (if applicable) to wherever you want it
+2. Open a terminal in the root folder and use `npm i` to install dependencies
+3. Copy the `example.env` rename it to `.env`. Fill it with the correct values
+4. Use `node bot` to run the bot
 
-## Getting Help
-To get info on the commands, use `tg!help` or `tg!help [commands]`.
-
-To get more advanced support, join the support server linked below.
-
-## Other Links
+## Support and links
 [Support server](https://discord.gg/EvDmXGt)  
 [Patreon](https://patreon.com/greysdawn)  
 [Ko-Fi](https://ko-fi.com/greysdawn)
