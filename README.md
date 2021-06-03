@@ -60,3 +60,6 @@ You'll also want some technical know-how, especially if you intend to make chang
 [Support server](https://discord.gg/EvDmXGt)  
 [Patreon](https://patreon.com/greysdawn)  
 [Ko-Fi](https://ko-fi.com/greysdawn)
+
+### Commissions
+We do commissions! If you're interested in a bot or website, check out [this doc](https://docs.google.com/document/d/1hvqvqdWj0mpHeNjo_mr2AHF7La32nkp4BDLxO1dvTHw/edit?usp=drivesdk) for more info!
