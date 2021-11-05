@@ -10,7 +10,7 @@ module.exports = {
 		else ticket = await bot.stores.tickets.getByChannel(msg.guild.id, msg.channel.id);
 		if(!ticket) return "Please provide a valid ticket hid or use this command in a ticket channel.";
 
-		var channel = msg.guild.channels.resolve(ticket.channel_id);
+		var channel = await msg.guild.channels.fetch(ticket.channel_id);
 		if(!channel) return "Couldn't find the channel associated with that ticket.";
 
 		try {

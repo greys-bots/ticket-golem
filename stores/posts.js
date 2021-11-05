@@ -16,8 +16,6 @@ class PostStore extends Collection {
 		this.bot.on('messageDelete', async (message) => {
 			await this.delete(message.channel.guild.id, message.channel.id, message.id);
 		})
-
-		this.bot.on('messageReactionAdd', async (...args) => this.handleReactions(...args))
 	}
 
 	async create(server, channel, message) {
@@ -146,95 +144,6 @@ class PostStore extends Collection {
 				return rej(e.message);
 			}
 			
-			res();
-		})
-	}
-
-	async handleReactions(react, user) {
-		return new Promise(async (res, rej) => {
-			if(user.bot) return res();
-			if(react.emoji.name != "✅") return res();
-
-			try {
-				if(react.partial) react = await react.fetch();
-				if(react.message.partial) var msg = await msg.fetch();
-				else var msg = react.message;
-			} catch(e) {
-				if(!e.message.toLowerCase().includes("unknown message")) console.log(e);
-				return rej(e.message);
-			}
-
-			if(!msg.channel.guild) return res();
-
-			var post = await this.get(msg.guild.id, msg.channel.id, msg.id);
-			if(!post) return res();
-
-			await react.users.remove(user.id);
-
-			var cfg = await this.bot.stores.configs.get(msg.guild.id);
-			if(!cfg) {
-				await user.send("That server is missing a ticket category setup. Please alert the mods.");
-				return res();
-			}
-
-			var open = (await this.bot.stores.tickets.getByUser(msg.guild.id, user.id));
-			if(open?.length >= cfg.ticket_limit) {
-				await user.send(`You already have ${open.length} ticket(s) open in that server. The current limit is ${cfg.ticket_limit}.`);
-				return res();
-			}
-
-			var code = this.bot.utils.genCode(this.bot.chars);
-			var time = new Date();
-
-			try {
-				var channel = await msg.guild.channels.create(`ticket-${code}`, {
-					topic: `Ticket ${code}`,
-					parent: cfg.category_id
-				})
-				await channel.lockPermissions(); //get perms from parent category
-				await channel.updateOverwrite(user.id, {
-					'VIEW_CHANNEL': true,
-					'SEND_MESSAGES': true
-				})
-
-
-				var message = await channel.send({
-					content:
-						`Thank you for opening a ticket, ${user}. ` +
-						`You can chat with support staff here.\n` +
-						`React with :pencil2: to edit this ticket, or ` +
-						`:lock: to close it. If the ticket is closed, react with ` +
-						`:unlock: to re-open it. :white_check_mark: will archive the ticket.`,
-					embed: {
-						title: "Untitled Ticket",
-						description: "(no description)",
-						fields: [
-							{name: "Ticket Opener", value: `${user}`},
-							{name: "Ticket Users", value: `${user}`}
-						],
-						color: 2074412,
-						footer: {
-							text: "Ticket ID: "+code
-						},
-						timestamp: time
-					}
-				})
-
-				message.pin();
-				["✏️","🔒", "✅"].forEach(r => message.react(r));
-
-				await this.bot.stores.tickets.create(msg.guild.id, code, {
-					channel_id: channel.id,
-					first_message: message.id,
-					opener: user.id,
-					users: [user.id],
-					timestamp: time.toISOString()
-				});
-			} catch(e) {
-				console.log(e);
-				return rej(e.message || e);
-			}
-
 			res();
 		})
 	}

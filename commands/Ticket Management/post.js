@@ -12,11 +12,11 @@ module.exports = {
 		if(!channel) return "Channel not found.";
 
 		try {
-			var message = await channel.send({embed: {
+			var message = await channel.send({embeds: [{
 				title: "Start Ticket",
 				description: `React to this post with ✅ to start a new ticket.\n\nNOTE: Users can have ${cfg?.ticket_limit || 5} tickets open at once.`,
 				color: 2074412
-			}});
+			}]});
 			message.react("✅")
 			await bot.stores.posts.create(msg.guild.id, message.channel.id, message.id);
 		} catch(e) {

@@ -136,6 +136,7 @@ module.exports = {
 		})
 	},
 	paginateEmbeds: async function(bot, m, reaction) {
+		var em;
 		switch(reaction.emoji.name) {
 			case "⬅️":
 				if(this.index == 0) {
@@ -143,9 +144,8 @@ module.exports = {
 				} else {
 					this.index -= 1;
 				}
-				await m.edit(this.data[this.index]);
-				await reaction.users.remove(this.user)
-				bot.menus[m.id] = this;
+
+				em = this.data[this.index];
 				break;
 			case "➡️":
 				if(this.index == this.data.length-1) {
@@ -153,15 +153,19 @@ module.exports = {
 				} else {
 					this.index += 1;
 				}
-				await m.edit(this.data[this.index]);
-				await reaction.users.remove(this.user)
-				bot.menus[m.id] = this;
+
+				em = this.data[this.index];
 				break;
 			case "⏹️":
 				await m.delete();
 				delete bot.menus[m.id];
+				return;
 				break;
 		}
+
+		await m.edit({embeds: [em.embed ?? em]});
+		await reaction.users.remove(this.user)
+		bot.menus[m.id] = this;
 	},
 	checkPermissions: async (bot, msg, cmd)=>{
 		return new Promise((res)=> {

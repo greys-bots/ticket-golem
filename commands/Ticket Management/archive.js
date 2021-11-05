@@ -39,7 +39,7 @@ module.exports = {
 		var c;
 		if(!config?.archives_id) {
 			try {
-				await msg.author.send("Here is the archive:",{file: Buffer.from([`Ticket opened: ${bot.formatTime(new Date(ticket.timestamp))}\r\n`,
+				await msg.author.send({content: "Here is the archive:", file: Buffer.from([`Ticket opened: ${bot.formatTime(new Date(ticket.timestamp))}\r\n`,
 				`Ticket opener: ${ticket.opener.username}#${ticket.opener.discriminator} (${ticket.opener.id})\r\n`,
 				 `Users involved:\r\n${ticket.users.map(u => `${u.username}#${u.discriminator} (${u.id})`).join("\r\n")}`,"\r\n------\r\n"].join("")+data.reverse().join("\r\n------\r\n")),name: channel.name+".txt"})
 			} catch(e) {
@@ -77,7 +77,7 @@ module.exports = {
 		), channel.name+".txt")
 
 		try {
-			await c.send([embed, file]);
+			await c.send({embeds: [embed], files: [file]});
 			await channel.delete("Ticket archived.");
 			await bot.stores.tickets.delete(msg.guild.id, ticket.hid);
 		} catch(e) {

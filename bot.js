@@ -3,7 +3,23 @@ const fs 		= require("fs");
 
 require('dotenv').config();
 
-const bot = new Discord.Client({partials: ['MESSAGE', 'USER', 'CHANNEL', 'GUILD_MEMBER', 'REACTION']});
+const bot = new Discord.Client({
+	partials: [
+		'MESSAGE',
+		'USER',
+		'CHANNEL',
+		'GUILD_MEMBER',
+		'REACTION'
+	],
+	intents: [
+		Discord.Intents.FLAGS.GUILDS,
+		Discord.Intents.FLAGS.GUILD_MESSAGES,
+		Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+		
+		Discord.Intents.FLAGS.DIRECT_MESSAGES,
+		Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS,
+	]
+});
 
 bot.chars = process.env.CHARS;
 bot.prefix = process.env.PREFIX;
@@ -32,6 +48,10 @@ async function setup() {
 
 	files = fs.readdirSync(__dirname + "/events");
 	files.forEach(f => bot.on(f.slice(0,-3), (...args) => require(__dirname + "/events/"+f)(...args,bot)));
+
+	bot.handlers = {};
+	files = fs.readdirSync(__dirname + "/handlers");
+	files.forEach(f => bot.handlers[f.slice(0, -3)] = require(__dirname + "/handlers/"+f)(bot));
 
 	bot.utils = require(__dirname + "/utils");
 
@@ -78,7 +98,7 @@ bot.formatTime = (date) => {
 }
 
 bot.on("ready",()=>{
-	console.log("Ready");
+	console.log("TG ready");
 	bot.updateStatus();
 })
 
