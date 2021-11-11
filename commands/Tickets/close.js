@@ -30,7 +30,7 @@ module.exports = {
 			var tmessage = await channel.messages.fetch(ticket.first_message);
 
 			for(var i = 0; i < ticket.users.length; i++) {
-				await tmessage.channel.updateOverwrite(ticket.users[i].id, {
+				await tmessage.channel.permissionOverwrites.edit(ticket.users[i].id, {
 					'VIEW_CHANNEL': true,
 					'SEND_MESSAGES': false
 				});

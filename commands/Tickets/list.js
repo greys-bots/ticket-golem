@@ -23,7 +23,7 @@ module.exports = {
 
 		var embeds = tickets.map((t,i) => {
 			return {embed: {
-				title: `${t.name || "Untitled"} (ticket ${i+1}/${tickets.length})`,
+				title: `${t.name || "Untitled ticket"} (ticket ${i+1}/${tickets.length})`,
 				description: t.description || "*(no description)*",
 				color: t.closed ? parseInt("aa5555", 16) : parseInt("55aa55", 16),
 				fields: [
