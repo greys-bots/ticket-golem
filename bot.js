@@ -54,10 +54,6 @@ async function setup() {
 	files.forEach(f => bot.handlers[f.slice(0, -3)] = require(__dirname + "/handlers/"+f)(bot));
 
 	bot.utils = require(__dirname + "/utils");
-
-	var data = bot.utils.loadCommands(__dirname + "/commands");
-	
-	Object.keys(data).forEach(k => bot[k] = data[k]);
 }
 
 bot.writeLog = async (log) => {
@@ -73,22 +69,6 @@ bot.writeLog = async (log) => {
 			if(err) console.log(`Error while attempting to apend to log ${ndt}\n`+err);
 		});
 	}
-}
-
-bot.parseCommand = async function(bot, msg, args) {
-	if(!args[0]) return undefined;
-	
-	var command = bot.commands.get(bot.aliases.get(args[0].toLowerCase()));
-	if(!command) return {command, nargs: args};
-
-	args.shift();
-
-	if(args[0] && command.subcommands && command.subcommands.get(command.sub_aliases.get(args[0].toLowerCase()))) {
-		command = command.subcommands.get(command.sub_aliases.get(args[0].toLowerCase()));
-		args.shift();
-	}
-
-	return {command, nargs: args};
 }
 
 bot.formatTime = (date) => {

@@ -51,7 +51,7 @@ module.exports = {
 			};
 		}
 
-		return "Post sent..";
+		return "Post sent.";
 	},
 	permissions: ['MANAGE_MESSAGES']
 }

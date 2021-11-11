@@ -11,49 +11,34 @@ module.exports = async (msg, bot)=>{
 		if(thanks) return await msg.channel.send(WELCOMES[Math.floor(Math.random() * WELCOMES.length)]);
 		return;
 	}
+	if(msg.content.toLowerCase() == bot.prefix) return msg.channel.send("Hello there.");
+
 	var log = [
 		`Guild: ${msg.guild ? msg.guild.name : "DMs"} (${msg.guild ? msg.guild.id : msg.channel.id})`,
 		`User: ${msg.author.username}#${msg.author.discriminator} (${msg.author.id})`,
 		`Message: ${msg.content}`,
 		`--------------------`
 	];
-	let args = msg.content.replace(new RegExp(`^(${bot.prefix})`,"i"), "").split(" ");
-	if(!args[0]) args.shift();
-	if(!args[0]) return msg.channel.send("Hello there.");
 	var config = {};
-	var usages = {whitelist: [], blacklist: []};
 	if(msg.guild) config = await bot.stores.configs.get(msg.guild.id);
 
-	let {command, nargs} = await bot.parseCommand(bot, msg, args);
+	var content = msg.content.slice(bot.prefix.length);
+	let {command, args} = await bot.handlers.command.parse(content);
 	if(!command) {
-		await msg.channel.send("Command not found.");
-		log.push('- Command Not Found -')
-		console.log(log.join("\r\n"));
-		bot.writeLog(log.join("\r\n"));
-		return;
-	}
-
-	if(!msg.guild && command.guildOnly) {
-		console.log("- Command is guild only -")
-		return await msg.channel.send("That command can only be used in guilds.");
-	}
-	
-	var check = await bot.utils.checkPermissions(bot, msg, command);
-	if(!check) {
-		console.log("- Missing Permissions -")
-		return await msg.channel.send('You do not have permission to use that command.');
+		log.push('- Command not found -');
+		console.log(log.join('\r\n'));
+		bot.writeLog(log.join('\r\n'));
+		return await msg.channel.send("Command not found.");
 	}
 	
 	try {
-		var result = await command.execute(bot, msg, nargs, config);
+		var result = await bot.handlers.command.handle({command, args, msg, config});
 	} catch(e) {
 		console.log(e.stack);
 		log.push(`Error: ${e.stack}`);
 		log.push(`--------------------`);
-		await msg.channel.send('Error:\n'+(e.message || e))
+		msg.channel.send('Error: '+(e.message ?? e));
 	}
-	console.log(log.join('\r\n'));
-	bot.writeLog(log.join('\r\n'));
 	
 	if(!result) return;
 	if(Array.isArray(result)) { //embeds

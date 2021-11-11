@@ -39,7 +39,9 @@ module.exports = {
 		var cmds;
 		if(!mod && !cmd && !scmd) {
 			var mods = ctx.client.slashCommands.map(m => m).filter(m => m.options);
-			var ug = ctx.client.slashCommands.map(m => m).filter(m => !m.options);
+			var ug = ctx.client.slashCommands.map(m => m).filter(m => !m.options && ![2, 3].includes(m.data.type));
+			var ctm = ctx.client.slashCommands.map(m => m).filter(m => [2, 3].includes(m.data.type));
+
 			for(var m of mods) {
 				var e = {
 					title: (m.data.name).toUpperCase(),
@@ -61,6 +63,17 @@ module.exports = {
 				}
 
 				for(var c of ug) e.fields.push({name: c.name ?? c.data.name, value: c.description ?? c.data.description});
+				embeds.push(e)
+			}
+
+			if(ctm?.[0]) {
+				var e = {
+					title: "CONTEXT MENU",
+					description: "Commands that appear on right clicking",
+					fields: []
+				}
+
+				for(var c of ctm) e.fields.push({name: c.name ?? c.data.name, value: c.description ?? c.data.description});
 				embeds.push(e)
 			}
 		} else {
@@ -94,10 +107,20 @@ module.exports = {
 				fields: []
 			})
 
-			if(cm.usage) embeds[embeds.length - 1].fields.push({
-				name: "Usage",
-				value: cm.usage.map(u => `/${name.trim()} ${u}`).join("\n")
-			})
+			if(cm.usage) {
+				if([2,3].includes(cm.data.type)) {
+					embeds[embeds.length - 1].fields.push({
+						name: "Usage",
+						value: cm.usage.join("\n")
+					})
+				} else {
+					embeds[embeds.length - 1].fields.push({
+						name: "Usage",
+						value: cm.usage.map(u => `/${name.trim()}  ${u}`).join("\n")
+					})
+				}
+			}
+
 			if(cm.options) embeds[embeds.length - 1].fields.push({
 				name: "Subcommands",
 				value: cm.options.map(o => `**/${name.trim()} ${o.data.name}** - \`${o.data.description}\``).join("\n")

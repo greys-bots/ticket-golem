@@ -7,10 +7,10 @@ module.exports = {
 		if(!args[0]) return "Please provide a search query.";
 		var query = {};
 		var tickets;
-		query.user = args.join(" ").match(/from\:(\d{17,})/i)?.[1];
+		query.opener = args.join(" ").match(/from\:(\d{17,})/i)?.[1];
 		query.text = args.join(" ").replace(/from\:(\d{17,})\s?/i, "");
 		
-		if(!query.user && !query.text) return "Please provide a search query."; 
+		if(!query.opener && !query.text) return "Please provide a search query."; 
 
 		tickets = await bot.stores.tickets.search(msg.guild.id, query);
 

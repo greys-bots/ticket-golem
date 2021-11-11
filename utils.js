@@ -1,5 +1,4 @@
-const { Collection } = require('discord.js');
-const fs 			 = require('fs');
+const fs = require('fs');
 
 const recursivelyReadDirectory = (dir) => {
 	var results = [];
@@ -14,72 +13,8 @@ const recursivelyReadDirectory = (dir) => {
 
 	return results;
 }
-
-const loadCommands = (path) => {
-	var modules = new Collection();
-	var mod_aliases = new Collection();
-	var commands = new Collection();
-	var aliases = new Collection();
-
-	var files = recursivelyReadDirectory(path);
-
-	for(f of files) {
-		var path_frags = f.replace(path, "").split(/(?:\\|\/)/);
-		var mod = path_frags.length > 1 ? path_frags[path_frags.length - 2] : "Unsorted";
-		var file = path_frags[path_frags.length - 1];
-		if(!modules.get(mod.toLowerCase())) {
-			var mod_info = require(file == "__mod.js" ? f : f.replace(file, "__mod.js"));
-			modules.set(mod.toLowerCase(), {...mod_info, name: mod, commands: new Collection()})
-			mod_aliases.set(mod.toLowerCase(), mod.toLowerCase());
-			if(mod_info.alias) mod_info.alias.forEach(a => mod_aliases.set(a, mod.toLowerCase()));
-		}
-		if(file == "__mod.js") continue;
-
-		mod = modules.get(mod.toLowerCase());
-		if(!mod) {
-			console.log("Whoopsies");
-			continue;
-		}
-
-		var command = require(f);
-		command.module = mod;
-		command.name = file.slice(0, -3).toLowerCase();
-		command = registerSubcommands(command, mod);
-		commands.set(command.name, command);
-		mod.commands.set(command.name, command);
-		aliases.set(command.name, command.name);
-		if(command.alias) command.alias.forEach(a => aliases.set(a, command.name));
-	}
-
-	return {modules, mod_aliases, commands, aliases};
-}
-
-const registerSubcommands = function(command, module, name) {	
-	if(command.subcommands) {
-		var subcommands = command.subcommands;
-		command.subcommands = new Collection();
-		Object.keys(subcommands).forEach(c => {
-			var cmd = subcommands[c];
-			cmd.name = `${command.name} ${c}`;
-			cmd.parent = command;
-			cmd.module = command.module;
-			if(!command.sub_aliases) command.sub_aliases = new Collection();
-			command.sub_aliases.set(c, c);
-			if(cmd.alias) cmd.alias.forEach(a => command.sub_aliases.set(a, c));
-			if(command.permissions && !cmd.permissions) cmd.permissions = command.permissions;
-			if(command.guildOnly != undefined && cmd.guildOnly == undefined)
-				cmd.guildOnly = command.guildOnly;
-			command.subcommands.set(c, cmd);
-		})
-	}
-	return command;
-}
-
 module.exports = {
 	recursivelyReadDirectory,
-	registerSubcommands,
-	loadCommands,
-	
 	genCode: (table, num = 4) =>{
 		var codestring="";
 		var codenum=0;
@@ -135,6 +70,35 @@ module.exports = {
 			res(embeds);
 		})
 	},
+	genTicketEmbed: (ticket) => {
+		var users;
+		if(ticket.users.length > 20) {
+			users = ticket.users.slice(0, 21)
+				.map(u => `<@${u.id}>`)
+				.join("\n") +
+				`\nand ${ticket.users.length - 20} more`;
+		} else users = ticket.users.map(u => `<@${u.id}>`).join("\n");
+		
+		return {
+			title: ticket.name ?? "Untitled Ticket",
+			description: ticket.description ?? "(no description)",
+			fields: [
+				{
+					name: "Ticket Opener",
+					value: `<@${ticket.opener.id}>`
+				},
+				{
+					name: "Ticket Users",
+					value: users
+				}
+			],
+			color: ticket.closed ? 0xaa5555 : 0x55aa55,
+			footer: {
+				text: `Ticket ID: ${ticket.hid}`
+			},
+			timestamp: ticket.timestamp
+		}
+	},
 	paginateEmbeds: async function(bot, m, reaction) {
 		var em;
 		switch(reaction.emoji.name) {
@@ -160,31 +124,11 @@ module.exports = {
 				await m.delete();
 				delete bot.menus[m.id];
 				return;
-				break;
 		}
 
 		await m.edit({embeds: [em.embed ?? em]});
 		await reaction.users.remove(this.user)
 		bot.menus[m.id] = this;
-	},
-	checkPermissions: async (bot, msg, cmd)=>{
-		return new Promise((res)=> {
-			if(cmd?.permissions) res(msg.member.permissions.has(cmd.permissions))
-			else res(true);
-		})
-	},
-	isDisabled: async (bot, srv, cmd, name) =>{
-		return new Promise(async res=>{
-			var cfg = await bot.stores.configs.get(srv);
-			if(!cfg?.mod_only?.[0]) return res(false);
-			let dlist = cfg.mod_only;
-			name = name.split(" ");
-			if(dlist && (dlist.includes(name[0]) || dlist.includes(name.join(" ")))) {
-				res(true);
-			} else {
-				res(false);
-			}
-		})
 	},
 	async checkTicketPerms(ctx) {
 		var {

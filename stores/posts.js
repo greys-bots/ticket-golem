@@ -136,6 +136,8 @@ class PostStore extends Collection {
 		return new Promise(async (res, rej) => {
 			try {
 				var posts = await this.getAll(server);
+				if(!posts?.length) return res();
+
 				posts = posts.filter(p => p.channel_id == channel);
 				await this.db.query(`DELETE FROM posts WHERE server_id = $1 AND channel_id = $2`,[server, channel]);
 				for(var post of posts) super.delete(`${server}-${channel_id}-${post.message_id}`);

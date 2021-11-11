@@ -159,11 +159,11 @@ class InteractionHandler {
 
 		var check = this.checkPerms(cmd, ctx);
 		if(!check) return await ctx.reply({
-			content: "You don't have permission to use this command!",
+			content: "You don't have permission to use that command.",
 			ephemeral: true
 		});
 		if(cmd.guildOnly && !ctx.guildId) return await ctx.reply({
-			content: "That command is guild only!",
+			content: "That command is guild only.",
 			ephemeral: true
 		})
 		

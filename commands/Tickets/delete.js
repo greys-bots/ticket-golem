@@ -14,7 +14,7 @@ module.exports = {
 		if(!channel) return "Couldn't find the channel associated with that ticket.";
 
 		try {
-			await channel.delete("Ticket deleted");
+			await channel.delete("Ticket deleted.");
 			await bot.stores.tickets.delete(msg.guild.id, ticket.hid);
 
 			if(channel.id == msg.channel.id) await msg.author.send("Ticket deleted.");

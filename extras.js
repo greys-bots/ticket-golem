@@ -15,7 +15,7 @@ module.exports = {
 			custom_id: 'cancel'
 		}
 	],
-	delButtons: confButtons: [
+	delButtons: [
 		{
 			type: 2,
 			style: 4,

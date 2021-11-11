@@ -1,3 +1,5 @@
+const { confButtons } = require('../../extras');
+
 module.exports = {
 	data: {
 		name: 'close',
@@ -30,6 +32,23 @@ module.exports = {
 		})
 		if(!check) return "You do not have permission to edit this ticket.";
 
+		var message = await ctx.reply({
+			content: "Are you sure you want to close this ticket?\nNOTE: This will remove the ability to send messages; " +
+					 "users involved will still see the ticket.",
+			components: [{
+				type: 1,
+				components: confButtons
+			}],
+			fetchReply: true
+		})
+
+		var conf = await ctx.client.utils.getConfirmation(ctx.client, message, ctx.user);
+		if(conf.msg) {
+			if(!conf.interaction) return conf.msg;
+			await conf.interaction.reply(conf.msg);
+			return;
+		}
+
 		var channel;
 		try {
 			if(ctx.channel.id == ticket.channel_id) channel = ctx.channel;
@@ -56,6 +75,8 @@ module.exports = {
 			return e.message ?? e;
 		}
 
-		return "Ticket closed."
+		if(!conf.interaction) return "Ticket closed.";
+		await conf.interaction.reply("Ticket closed.");
+		return;
 	}
 }

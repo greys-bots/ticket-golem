@@ -76,21 +76,21 @@ class CommandHandler {
 	}
 
 	async handle(ctx) {
-		var {command, args, msg} = ctx;
-		if(command.guildOnly && !msg.channel.guild) return "That command is guild only!";
+		var {command, args, msg, config} = ctx;
+		if(command.guildOnly && !msg.channel.guild) return "That command is guild only.";
 		if(msg.channel.guild) {
 			var check = this.checkPerms(ctx);
-			if(!check) return "You don't have permission to use that command!";
+			if(!check) return "You don't have permission to use that command.";
 		}
 		if(command.cooldown && this.cooldowns.get(`${msg.author.id}-${command.name}`)) {
 			var s = Math.ceil((this.cooldowns.get(`${msg.author.id}-${command.name}`) - Date.now()) / 1000)
-			var m = await msg.channel.send(`Cool down time! Please wait **${s}s** before using this command`);
+			var m = await msg.channel.send(`Cool down initiated. Please wait **${s}s** before using this command.`);
 			setTimeout(() => m.delete(), s * 1000);
 			return;
 		}
 
 		try {
-			var res = await command.execute(this.bot, msg, args);
+			var res = await command.execute(this.bot, msg, args, config);
 		} catch(e) {
 			return Promise.reject(e.message);
 		}
@@ -120,7 +120,7 @@ class CommandHandler {
 		return nargs;
 	}
 
-	registerSubcommands(command, module, name) {	
+	registerSubcommands(command) {	
 		if(command.subcommands) {
 			var subcommands = command.subcommands;
 			command.subcommands = new Collection();

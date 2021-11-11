@@ -30,7 +30,7 @@ class TicketStore extends Collection {
 					closed
 				) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
 				[hid, server, data.channel_id, data.first_message, data.opener, data.users, data.name,
-				 data.description, data.timestamp || new Date(), data.closed]);
+				 data.description, data.timestamp || new Date(), data.closed ?? false]);
 			} catch(e) {
 				console.log(e);
 		 		return rej(e.message);
@@ -56,7 +56,7 @@ class TicketStore extends Collection {
 					closed
 				) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
 				[hid, server, data.channel_id, data.first_message, data.opener, data.users, data.name,
-				 data.description, data.timestamp || new Date(), data.closed]);
+				 data.description, data.timestamp || new Date(), data.closed ?? false]);
 			} catch(e) {
 				console.log(e);
 		 		return rej(e.message);
@@ -199,6 +199,7 @@ class TicketStore extends Collection {
 						       (x.description || "(no description)").toLowerCase().includes(query.text)
 					});
 				}
+				if(query.status) tickets = tickets.filter(x => x.closed == (query.status == "open" ? false : true));
 
 				for(var i = 0; i < tickets.length; i++) {
 					var users = [];
