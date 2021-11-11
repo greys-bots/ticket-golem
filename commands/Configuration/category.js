@@ -2,6 +2,8 @@ module.exports = {
 	help: ()=> "Set server's ticket category.",
 	usage: ()=> [" [category ID] - Sets the ticket category for this server."],
 	execute: async (bot, msg, args) => {
+		if(!args[0]) return "Please provide a category ID.";
+		
 		var cfg = await bot.stores.configs.get(msg.guild.id);
 
 		var category = msg.guild.channels.cache.find(c => c.id == args[0].replace(/[<#>]/g,"") || c.name == args[0].toLowerCase());

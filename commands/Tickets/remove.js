@@ -33,9 +33,7 @@ module.exports = {
 
 		try {
 			for(var i = 0; i < members.length; i++) {
-				await channel.updateOverwrite(members[i].id, {
-					'VIEW_CHANNEL': false
-				})
+				await channel.permissionOverwrites.delete(members[i].id)
 			}
 
 			await bot.stores.tickets.update(msg.guild.id, ticket.hid, {users: ticket.users.map(u => u.id)});

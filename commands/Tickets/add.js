@@ -30,7 +30,7 @@ module.exports = {
 
 		try {
 			for(var i = 0; i < members.length; i++) {
-				await channel.updateOverwrite(members[i].id, {
+				await channel.permissionOverwrites.edit(members[i].id, {
 					'VIEW_CHANNEL': true,
 					'SEND_MESSAGES': true
 				})
