@@ -15,7 +15,6 @@ module.exports = {
 			ids = args.map(id => id.replace(/[<@!>]/g,""))
 		}
 
-		console.log(ticket);
 		if(!ticket) return "Please provide a valid ticket hid or use this command in a ticket channel.";
 		if((cfg.mod_only?.includes('remove') && !msg.member.permissions.has("MANAGE_CHANNELS")) ||
 			(msg.author.id != ticket.opener.id) && !msg.member.permissions.has("MANAGE_CHANNELS"))
