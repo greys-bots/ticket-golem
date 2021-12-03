@@ -33,35 +33,35 @@ module.exports = async (msg, bot)=>{
 	
 	try {
 		var result = await bot.handlers.command.handle({command, args, msg, config});
+
+		if(!result) return;
+		if(Array.isArray(result)) { //embeds
+			var message = await msg.channel.send({embeds: [result[0].embed ?? result[0]]});
+			if(result[1]) {
+				if(!bot.menus) bot.menus = {};
+				bot.menus[message.id] = {
+					user: msg.author.id,
+					data: result,
+					index: 0,
+					timeout: setTimeout(()=> {
+						if(!bot.menus[message.id]) return;
+						try {
+							message.reactions.removeAll();
+						} catch(e) {
+							console.log(e);
+						}
+						delete bot.menus[message.id];
+					}, 900000),
+					execute: bot.utils.paginateEmbeds
+				};
+				["⬅️", "➡️", "⏹️"].forEach(r => message.react(r));
+			}
+		} else if(typeof result == "object") await msg.channel.send({embeds: [result.embed ?? result]});
+		else await msg.channel.send(result);
 	} catch(e) {
-		console.log(e.stack);
-		log.push(`Error: ${e.stack}`);
+		console.log(e);
+		log.push(`Error: ${e}`);
 		log.push(`--------------------`);
 		msg.channel.send('Error: '+(e.message ?? e));
 	}
-	
-	if(!result) return;
-	if(Array.isArray(result)) { //embeds
-		var message = await msg.channel.send({embeds: [result[0].embed ?? result[0]]});
-		if(result[1]) {
-			if(!bot.menus) bot.menus = {};
-			bot.menus[message.id] = {
-				user: msg.author.id,
-				data: result,
-				index: 0,
-				timeout: setTimeout(()=> {
-					if(!bot.menus[message.id]) return;
-					try {
-						message.reactions.removeAll();
-					} catch(e) {
-						console.log(e);
-					}
-					delete bot.menus[message.id];
-				}, 900000),
-				execute: bot.utils.paginateEmbeds
-			};
-			["⬅️", "➡️", "⏹️"].forEach(r => message.react(r));
-		}
-	} else if(typeof result == "object") await msg.channel.send({embeds: [result.embed ?? result]});
-	else await msg.channel.send(result);
 }
