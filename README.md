@@ -44,9 +44,9 @@ Much of TG's ticket management features are reaction-based, making closing/openi
 
 ## Self hosting
 ### Requirements
-**Node:** 14.0 or above  
+**Node:** 16.6 or above  
 **Postgres:** any version  
-**Tech:** a VPS or computer that's often online  
+**Tech:** a VPS or computer that's often online. **This bot does NOT run on repl.it**  
 You'll also want some technical know-how, especially if you intend to make changes
 
 ### Steps
