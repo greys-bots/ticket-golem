@@ -34,7 +34,7 @@ module.exports = {
 			return embeds;
 		}
 
-		let {command} = await bot.parseCommand(bot, msg, args);
+		let {command} = await bot.handlers.command.parse(args.join(" "));
 		if(command) {
 			var embed = {embed: {
 				title: `Help | ${command.name.toLowerCase()}`,
