@@ -1,4 +1,5 @@
 const { MessageAttachment } = require("discord.js");
+const { starterVars: KEYS } = require('../extras');
 
 const COMPS = {
 	closed: [
@@ -121,12 +122,7 @@ class TicketHandler {
 				'SEND_MESSAGES': true
 			})
 
-
-			var message = await channel.send({
-				content:
-					`Thank you for opening a ticket, ${user}. ` +
-					`You can chat with support staff here.\n` +
-					`React or interact below for options.`,
+			var mdata = {
 				embeds: [{
 					title: "Untitled Ticket",
 					description: "(no description)",
@@ -144,8 +140,26 @@ class TicketHandler {
 					type: 1,
 					components: COMPS.open
 				}]
-			})
+			}
 
+			if(cfg.starter) {
+				var tmp = cfg.starter;
+				for(var k of Object.keys(KEYS)) {
+					tmp = tmp.replace(k, KEYS[k].repl({
+						user,
+						guild: msg.guild
+					}))
+				}
+
+				mdata.content = tmp;
+			} else {
+				mdata.content =
+					`Thank you for opening a ticket, ${user}. ` +
+					`You can chat with support staff here.\n` +
+					`React or interact below for options.`;
+			}
+
+			var message = await channel.send(mdata)
 			message.pin();
 
 			await this.bot.stores.tickets.create(msg.guild.id, code, {

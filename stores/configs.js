@@ -17,10 +17,11 @@ class ConfigStore extends Collection {
 					archives_id,
 					user_limit,
 					ticket_limit,
-					mod_only
-				) VALUES ($1,$2,$3,$4,$5,$6)`,
+					mod_only,
+					starter
+				) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
 				[server, data.category_id, data.archives_id, data.user_limit || 10,
-				 data.ticket_limit || 5, data.mod_only]);
+				 data.ticket_limit || 5, data.mod_only, data.starter]);
 			} catch(e) {
 				console.log(e);
 		 		return rej(e.message);
@@ -39,10 +40,11 @@ class ConfigStore extends Collection {
 					archives_id,
 					user_limit,
 					ticket_limit,
-					mod_only
-				) VALUES ($1,$2,$3,$4,$5,$6)`,
+					mod_only,
+					starter
+				) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
 				[server, data.category_id, data.archives_id, data.user_limit || 10,
-				 data.ticket_limit || 5, data.mod_only]);
+				 data.ticket_limit || 5, data.mod_only, data.starter]);
 			} catch(e) {
 				console.log(e);
 		 		return rej(e.message);

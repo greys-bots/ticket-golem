@@ -28,5 +28,6 @@ module.exports = {
 		return "Reaction bound.";
 	},
 	ephemeral: true,
-	permissions: ['MANAGE_MESSAGES']
+	permissions: ['MANAGE_MESSAGES'],
+	guildOnly: true
 }
