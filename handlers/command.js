@@ -92,7 +92,7 @@ class CommandHandler {
 
 		try {
 			var res = await command.execute(this.bot, msg, args, config);
-			await this.#handleWarning({
+			await this.handleWarning({
 				user: msg.author,
 				channel: msg.channel
 			})
