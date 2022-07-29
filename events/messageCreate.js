@@ -6,12 +6,28 @@ const WELCOMES = [
 
 module.exports = async (msg, bot)=>{
 	if(msg.author.bot) return;
-	if(!new RegExp(`^(${bot.prefix})`,"i").test(msg.content.toLowerCase())) {
+	var config = await bot.stores.configs.get(msg.channel.guild?.id);
+	if(!config) config = {};
+
+	var prefix; 
+	var match;
+	var content;
+	if(process.env.REQUIRE_MENTIONS) {
+		prefix = new RegExp(`^<@!?(?:${bot.user.id})>`);
+		match = msg.content.match(prefix);
+		content = msg.content.replace(prefix, '').trim();
+	} else {
+		prefix = bot.prefix.toLowerCase();
+		match = msg.content.startsWith(prefix);
+		content = msg.content.slice(prefix.length).trim();
+	}
+
+	if(!match) {
 		var thanks = msg.content.match(/^(thanks? ?(you)?|ty),? ?(tg|ticket golem)/i);
 		if(thanks) return await msg.channel.send(WELCOMES[Math.floor(Math.random() * WELCOMES.length)]);
 		return;
 	}
-	if(msg.content.toLowerCase() == bot.prefix) return msg.channel.send("Hello there.");
+	if(content == '') return msg.channel.send("Hello there.");
 
 	var log = [
 		`Guild: ${msg.guild ? msg.guild.name : "DMs"} (${msg.guild ? msg.guild.id : msg.channel.id})`,
@@ -19,10 +35,7 @@ module.exports = async (msg, bot)=>{
 		`Message: ${msg.content}`,
 		`--------------------`
 	];
-	var config = {};
-	if(msg.guild) config = await bot.stores.configs.get(msg.guild.id);
 
-	var content = msg.content.slice(bot.prefix.length);
 	let {command, args} = await bot.handlers.command.parse(content);
 	if(!command) {
 		log.push('- Command not found -');
