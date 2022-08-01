@@ -13,6 +13,8 @@ module.exports = async (msg, bot)=>{
 	var match;
 	var content;
 	if(process.env.REQUIRE_MENTIONS) {
+		if(msg.content.toLowerCase().startsWith(bot.prefix))
+			return 'Please ping me to use commands.';
 		prefix = new RegExp(`^<@!?(?:${bot.user.id})>`);
 		match = msg.content.match(prefix);
 		content = msg.content.replace(prefix, '').trim();
