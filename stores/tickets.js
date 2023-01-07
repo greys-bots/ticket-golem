@@ -8,10 +8,26 @@ class TicketStore extends Collection {
 		this.bot = bot;
 	};
 
-	init() {
+	async init() {
 		this.bot.on('channelDelete', async (channel) => {
 			await this.deleteByChannel(channel.guild.id, channel.id);
 		})
+
+		await this.db.query(`
+			CREATE TABLE IF NOT EXISTS tickets (
+				id 				SERIAL PRIMARY KEY,
+				hid 			TEXT,
+				server_id 		TEXT,
+				channel_id		TEXT,
+				first_message 	TEXT,
+				opener 			TEXT,
+				users 			TEXT[],
+				name 			TEXT,
+				description 	TEXT,
+				timestamp 		TIMESTAMPTZ,
+				closed 			BOOLEAN
+			);
+		`)
 	}
 
 	async create(server, hid, data = {}) {

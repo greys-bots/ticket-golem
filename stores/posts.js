@@ -8,7 +8,7 @@ class PostStore extends Collection {
 		this.bot = bot;
 	};
 
-	init() {
+	async init() {
 		this.bot.on('channelDelete', async (channel) => {
 			await this.deleteByChannel(channel.guild.id, channel.id);
 		})
@@ -16,6 +16,15 @@ class PostStore extends Collection {
 		this.bot.on('messageDelete', async (message) => {
 			await this.delete(message.channel.guild.id, message.channel.id, message.id);
 		})
+
+		await this.db.query(`
+			CREATE TABLE IF NOT EXISTS posts (
+				id			SERIAL PRIMARY KEY,
+				server_id	TEXT,
+				channel_id	TEXT,
+				message_id	TEXT
+			);
+		`)
 	}
 
 	async create(server, channel, message) {

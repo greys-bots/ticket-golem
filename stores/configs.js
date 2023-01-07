@@ -8,6 +8,21 @@ class ConfigStore extends Collection {
 		this.bot = bot;
 	};
 
+	async init() {
+		await this.db.query(`
+			CREATE TABLE IF NOT EXISTS configs (
+				id 				SERIAL PRIMARY KEY,
+				server_id		TEXT,
+				category_id		TEXT,
+				archives_id 	TEXT,
+				user_limit 		INTEGER,
+				ticket_limit 	INTEGER,
+				mod_only 		TEXT[],
+				starter 		TEXT
+			);
+		`);
+	}
+
 	async create(server, data = {}) {
 		return new Promise(async (res, rej) => {
 			try {
