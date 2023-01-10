@@ -1,12 +1,22 @@
-const {Collection} = require("discord.js");
+const { Models: { DataStore, DataObject } } = require("frame");
 
-class PostStore extends Collection {
+const KEYS = {
+	id: { },
+	server_id: { },
+	channel_id: { },
+	message_id: { }
+}
+
+class Post extends DataObject {
+	constructor(store, keys, data) {
+		super(store, keys, data)
+	}
+}
+
+class PostStore extends DataStore {
 	constructor(bot, db) {
-		super();
-
-		this.db = db;
-		this.bot = bot;
-	};
+		super(bot, db);
+	}
 
 	async init() {
 		this.bot.on('channelDelete', async (channel) => {
@@ -14,7 +24,7 @@ class PostStore extends Collection {
 		})
 
 		this.bot.on('messageDelete', async (message) => {
-			await this.delete(message.channel.guild.id, message.channel.id, message.id);
+			await this.deleteByMessage(message.channel.guild.id, message.channel.id, message.id);
 		})
 
 		await this.db.query(`
@@ -27,136 +37,112 @@ class PostStore extends Collection {
 		`)
 	}
 
-	async create(server, channel, message) {
-		return new Promise(async (res, rej) => {
-			try {
-				await this.db.query(`INSERT INTO posts (
-					server_id,
-					channel_id,
-					message_id
-				) VALUES ($1,$2,$3)`,
-				[server, channel, message]);
-			} catch(e) {
-				console.log(e);
-		 		return rej(e.message);
-			}
-			
-			res(await this.get(server, channel, message));
-		})
+	async create(data = { }) {
+		try {
+			var c = await this.db.query(`INSERT INTO posts (
+				server_id,
+				channel_id,
+				message_id
+			) VALUES ($1,$2,$3)
+			returning *`,
+			[data.server_id, data.channel_id, data.message_id]);
+		} catch(e) {
+			console.log(e);
+	 		return Promise.reject(e.message);
+		}
+		
+		return await this.getID(c.rows[0].id);
 	}
 
-	async index(server, channel, message) {
-		return new Promise(async (res, rej) => {
-			try {
-				await this.db.query(`INSERT INTO posts (
-					server_id,
-					channel_id,
-					message_id
-				) VALUES ($1,$2,$3)`,
-				[server, channel, message]);
-			} catch(e) {
-				console.log(e);
-		 		return rej(e.message);
-			}
-			
-			res();
-		})
+	async get(server, channel, message) {
+		try {
+			var data = await this.db.query(`SELECT * FROM posts WHERE server_id = $1 AND channel_id = $2 AND message_id = $3`, [server, channel, message]);
+		} catch(e) {
+			console.log(e);
+			return Promise.reject(e.message);
+		}
+		
+		if(data.rows?.[0]) return new Post(this, KEYS, data.rows[0]);
+		else return undefined;
 	}
 
-	async get(server, channel, message, forceUpdate = false) {
-		return new Promise(async (res, rej) => {
-			if(!forceUpdate) {
-				var post = super.get(`${server}-${channel}-${message}`);
-				if(post) return res(post);
-			}
-			
-			try {
-				var data = await this.db.query(`SELECT * FROM posts WHERE server_id = $1 AND channel_id = $2 AND message_id = $3`, [server, channel, message]);
-			} catch(e) {
-				console.log(e);
-				return rej(e.message);
-			}
-			
-			if(data.rows?.[0]) {
-				this.set(`${server}-${channel}-${message}`, data.rows[0])
-				res(data.rows[0])
-			} else res(undefined);
-		})
+	async getID(id) {
+		try {
+			var data = await this.db.query(`SELECT * FROM posts WHERE id = $1`, [id]);
+		} catch(e) {
+			console.log(e);
+			return Promise.reject(e.message);
+		}
+		
+		if(data.rows?.[0]) return new Post(this, KEYS, data.rows[0]);
+		else return undefined;
 	}
 
 	async getAll(server) {
-		return new Promise(async (res, rej) => {
-			try {
-				var data = await this.db.query(`SELECT * FROM posts WHERE server_id = $1`, [server]);
-			} catch(e) {
-				console.log(e);
-				return rej(e.message);
-			}
-			
-			if(data.rows?.[0]) {
-				res(data.rows)
-			} else res(undefined);
-		})
+		try {
+			var data = await this.db.query(`SELECT * FROM posts WHERE server_id = $1`, [server]);
+		} catch(e) {
+			console.log(e);
+			return Promise.reject(e.message);
+		}
+		
+		if(data.rows?.[0]) return data.rows.map(r => new Post(this, KEYS, r));
+		else return undefined;
 	}
 
-	async update(server, channel, message, data = {}) {
-		return new Promise(async (res, rej) => {
-			try {
-				await this.db.query(`UPDATE posts SET ${Object.keys(data).map((k, i) => k+"=$"+(i+4)).join(",")} WHERE server_id = $1 AND channel_id = $2 AND message_id = $3`,[server, channel, message, ...Object.values(data)]);
-			} catch(e) {
-				console.log(e);
-				return rej(e.message);
-			}
+	async update(id, data = {}) {
+		try {
+			await this.db.query(`UPDATE posts SET ${Object.keys(data).map((k, i) => k+"=$"+(i+2)).join(",")} WHERE id = $1`,[id, ...Object.values(data)]);
+		} catch(e) {
+			console.log(e);
+			return Promise.reject(e.message);
+		}
 
-			res(await this.get(server, true));
-		})
+		return await this.getID(id);
 	}
 
-	async delete(server, channel, message) {
-		return new Promise(async (res, rej) => {
-			try {
-				await this.db.query(`DELETE FROM posts WHERE server_id = $1 AND channel_id = $2 AND message_id = $3`,[server, channel, message]);
-			} catch(e) {
-				console.log(e);
-				return rej(e.message);
-			}
-			
-			super.delete(`${server}-${channel}-${message}`);
-			res();
-		})
+	async delete(id) {
+		try {
+			await this.db.query(`DELETE FROM posts WHERE id = $1`,[id]);
+		} catch(e) {
+			console.log(e);
+			return Promise.reject(e.message);
+		}
+
+		return;
 	}
 
 	async deleteAll(server) {
-		return new Promise(async (res, rej) => {
-			try {
-				var posts = await this.getAll(server);
-				await this.db.query(`DELETE FROM posts WHERE server_id = $1`,[server]);
-				for(var post of posts) super.delete(`${server}-${post.channel_id}-${post.message_id}`);
-			} catch(e) {
-				console.log(e);
-				return rej(e.message);
-			}
-			
-			res();
-		})
+		try {
+			await this.db.query(`DELETE FROM posts WHERE server_id = $1`,[server]);
+		} catch(e) {
+			console.log(e);
+			return Promise.reject(e.message);
+		}
+		
+		return;
 	}
 
 	async deleteByChannel(server, channel) {
-		return new Promise(async (res, rej) => {
-			try {
-				var posts = await this.getAll(server);
-				if(!posts?.length) return res();
+		try {
+			await this.db.query(`DELETE FROM posts WHERE server_id = $1 AND channel_id = $2`,[server, channel]);
+		} catch(e) {
+			console.log(e);
+			return Promise.reject(e.message);
+		}
+		
+		return;
+	}
 
-				posts = posts.filter(p => p.channel_id == channel);
-				await this.db.query(`DELETE FROM posts WHERE server_id = $1 AND channel_id = $2`,[server, channel]);
-				for(var post of posts) super.delete(`${server}-${channel_id}-${post.message_id}`);
-			} catch(e) {
-				console.log(e);
-				return rej(e.message);
-			}
-			
-			res();
-		})
+	async deleteByMessage(server, channel, message) {
+		try {
+			await this.db.query(`DELETE FROM posts WHERE server_id = $1 AND channel_id = $2 AND message_id = $3`,[server, channel, message]);
+		} catch(e) {
+			console.log(e);
+			return Promise.reject(e.message);
+		}
+		
+		return;
 	}
 }
 

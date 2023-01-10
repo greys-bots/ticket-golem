@@ -1,26 +1,36 @@
-module.exports = {
-	data: {
-		name: 'description',
-		description: "Set the description for a ticket",
-		options: [
-			{
-				name: 'desc',
-				description: "The new ticket description",
-				type: 3,
-				required: true
-			},
-			{
-				name: 'ticket',
-				description: "The ticket to open",
-				type: 3,
-				required: false
-			}
-		]
-	},
-	usage: [
-		'[desc] - Sets description for the ticket associated with the current channel',
-		"[desc] [ticket] - Sets description for another ticket"
-	],
+const { Models: { SlashCommand } } = require('frame');
+
+class Command extends SlashCommand {
+	#bot;
+	#stores;
+
+	constructor(bot, stores) {
+		super({
+			name: 'description',
+			description: "Set the description for a ticket",
+			options: [
+				{
+					name: 'desc',
+					description: "The new ticket description",
+					type: 3,
+					required: true
+				},
+				{
+					name: 'ticket',
+					description: "The ticket to open",
+					type: 3,
+					required: false
+				}
+			],
+			usage: [
+				'[desc] - Sets description for the ticket associated with the current channel',
+				"[desc] [ticket] - Sets description for another ticket"
+			]
+		})
+		this.#bot = bot;
+		this.#stores = stores;
+	}
+
 	async execute(ctx) {
 		var cfg = await ctx.client.stores.configs.get(ctx.guild.id);
 		var description = ctx.options.getString('desc')?.trim();
@@ -47,11 +57,8 @@ module.exports = {
 			else channel = await ctx.guild.channels.fetch(ticket.channel_id);
 
 			await channel.edit({topic: description})
-			ticket = await ctx.client.stores.tickets.update(
-				ctx.guild.id,
-				ticket.hid,
-				{description}
-			)
+			ticket.description = description;
+			await ticket.save();
 
 			await ctx.client.handlers.ticket.editTicket({
 				ticket,
@@ -65,3 +72,5 @@ module.exports = {
 		return "Ticket updated."
 	}
 }
+
+module.exports = (bot, stores) => new Command(bot, stores);

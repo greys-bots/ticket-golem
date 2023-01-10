@@ -1,21 +1,31 @@
 const { delButtons } = require('../../extras');
+const { Models: { SlashCommand } } = require('frame');
 
-module.exports = {
-	data: {
-		name: 'delete',
-		description: "Deletes a ticket",
-		options: [{
-			name: 'ticket',
-			description: "The ticket ID to delete",
-			type: 3,
-			required: false
-		}]
-	},
-	usage: [
-		'- Deletes ticket associated with the current channel',
-		'[ticket] - Deletes a specific ticket'
-	],
-	extra: "This command does NOT archive the ticket. It simply deletes the entire channel.",
+class Command extends SlashCommand {
+	#bot;
+	#stores;
+
+	constructor(bot, stores) {
+		super({
+			name: 'delete',
+			description: "Deletes a ticket",
+			options: [{
+				name: 'ticket',
+				description: "The ticket ID to delete",
+				type: 3,
+				required: false
+			}],
+			usage: [
+				'- Deletes ticket associated with the current channel',
+				'[ticket] - Deletes a specific ticket'
+			],
+			extra: "This command does NOT archive the ticket. It simply deletes the entire channel.",
+			permissions: ['manageChannels']
+		})
+		this.#bot = bot;
+		this.#stores = stores;
+	}
+
 	async execute(ctx) {
 		var hid = ctx.options.getString('ticket')?.toLowerCase().trim();
 
@@ -48,6 +58,7 @@ module.exports = {
 		}
 
 		return;
-	},
-	permissions: ['MANAGE_CHANNELS']
+	}
 }
+
+module.exports = (bot, stores) => new Command(bot, stores);

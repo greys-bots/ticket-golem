@@ -1,18 +1,29 @@
-module.exports = {
-	data: {
-		name: 'archive',
-		description: "Archive a ticket",
-		options: [{
-			name: 'ticket',
-			description: "The ticket to archive",
-			type: 3,
-			required: false
-		}]
-	},
-	usage: [
-		"- Archive ticket associated with the current channel",
-		"[ticket] - Archive a specific ticket"
-	],
+const { Models: { SlashCommand } } = require('frame');
+
+class Command extends SlashCommand {
+	#bot;
+	#stores;
+
+	constructor(bot, stores) {
+		super({
+			name: 'archive',
+			description: "Archive a ticket",
+			options: [{
+				name: 'ticket',
+				description: "The ticket to archive",
+				type: 3,
+				required: false
+			}],
+			usage: [
+				"- Archive ticket associated with the current channel",
+				"[ticket] - Archive a specific ticket"
+			],
+			permissions: ["manageChannels"]
+		})
+		this.#bot = bot;
+		this.#stores = stores;
+	}
+
 	async execute(ctx) {
 		var config = await ctx.client.stores.configs.get(ctx.guild.id);
 
@@ -38,6 +49,7 @@ module.exports = {
 
 		if(channel.id != ctx.channel.id)
 			return {content: "Ticket archived.", ephemeral: true};
-	},
-	permissions: ["MANAGE_CHANNELS"]
+	}
 }
+
+module.exports = (bot, stores) => new Command(bot, stores);

@@ -1,11 +1,23 @@
-module.exports = {
-	data: {
-		name: "about",
-		description: "Info about the bot"
-	},
-	usage: [
-		"- Gives info about the bot"
-	],
+const { Models: { SlashCommand } } = require('frame');
+
+class Command extends SlashCommand {
+	#bot;
+	#stores;
+
+	constructor(bot, stores) {
+		super({
+			name: "about",
+			description: "Info about the bot",
+			usage: [
+				"- Gives info about the bot"
+			],
+			ephemeral: true
+		})
+
+		this.#bot = bot;
+		this.#stores = stores;
+	}
+
 	async execute(ctx) {
 		return {embeds: [{
 			title: "About Me",
@@ -21,6 +33,7 @@ module.exports = {
 				{name: "Want to support my creators?", value: "[Patreon](https://patreon.com/greysdawn) | [Ko-Fi](https://ko-fi.com/greysdawn)"}
 			]
 		}]}
-	},
-	ephemeral: true
+	}
 }
+
+module.exports = (bot, stores) => new Command(bot, stores);

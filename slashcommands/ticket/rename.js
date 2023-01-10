@@ -1,26 +1,36 @@
-module.exports = {
-	data: {
-		name: 'rename',
-		description: "Rename a ticket",
-		options: [
-			{
-				name: 'name',
-				description: "The new ticket name",
-				type: 3,
-				required: true
-			},
-			{
-				name: 'ticket',
-				description: "The ticket to open",
-				type: 3,
-				required: false
-			}
-		]
-	},
-	usage: [
-		'[name] - Renames the ticket associated with the current channel',
-		"[name] [ticket] - Renames another ticket"
-	],
+const { Models: { SlashCommand } } = require('frame');
+
+class Command extends SlashCommand {
+	#bot;
+	#stores;
+
+	constructor(bot, stores) {
+		super({
+			name: 'rename',
+			description: "Rename a ticket",
+			options: [
+				{
+					name: 'name',
+					description: "The new ticket name",
+					type: 3,
+					required: true
+				},
+				{
+					name: 'ticket',
+					description: "The ticket to open",
+					type: 3,
+					required: false
+				}
+			],
+			usage: [
+				'[name] - Renames the ticket associated with the current channel',
+				"[name] [ticket] - Renames another ticket"
+			]
+		})
+		this.#bot = bot;
+		this.#stores = stores;
+	}
+
 	async execute(ctx) {
 		var cfg = await ctx.client.stores.configs.get(ctx.guild.id);
 		
@@ -47,11 +57,8 @@ module.exports = {
 			else channel = await ctx.guild.channels.fetch(ticket.channel_id);
 
 			await channel.edit({name: `${ticket.hid}-${name}`})
-			ticket = await ctx.client.stores.tickets.update(
-				ctx.guild.id,
-				ticket.hid,
-				{name}
-			)
+			ticket.name = name;
+			await ticket.save();
 
 			await ctx.client.handlers.ticket.editTicket({
 				ticket,
@@ -65,3 +72,5 @@ module.exports = {
 		return "Ticket updated."
 	}
 }
+
+module.exports = (bot, stores) => new Command(bot, stores);

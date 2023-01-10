@@ -1,18 +1,30 @@
-module.exports = {
-	data: {
-		name: 'view',
-		description: "View and list tickets",
-		options: [{
-			name: 'ticket',
-			description: "A specific ticket to view",
-			type: 3,
-			required: false
-		}]
-	},
-	usage: [
-		'- View all tickets in the server',
-		'[ticket] - View info for a specific ticket'
-	],
+const { Models: { SlashCommand } } = require('frame');
+
+class Command extends SlashCommand {
+	#bot;
+	#stores;
+
+	constructor(bot, stores) {
+		super({
+			name: 'view',
+			description: "View and list tickets",
+			options: [{
+				name: 'ticket',
+				description: "A specific ticket to view",
+				type: 3,
+				required: false
+			}],
+			usage: [
+				'- View all tickets in the server',
+				'[ticket] - View info for a specific ticket'
+			],
+			permissions: ['manageChannels'],
+			ephemeral: true
+		})
+		this.#bot = bot;
+		this.#stores = stores;
+	}
+
 	async execute(ctx) {
 		var hid = ctx.options.getString('ticket')?.toLowerCase().trim();
 		var tickets = await ctx.client.stores.tickets.getAll(ctx.guild.id);
@@ -31,7 +43,7 @@ module.exports = {
 		}
 		
 		return embeds;
-	},
-	permissions: ['MANAGE_CHANNELS'],
-	ephemeral: true
+	}
 }
+
+module.exports = (bot, stores) => new Command(bot, stores);

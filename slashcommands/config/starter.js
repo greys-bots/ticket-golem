@@ -2,30 +2,39 @@ const {
 	clearButtons,
 	starterVars: KEYS
 } = require('../../extras');
+const { Models: { SlashCommand } } = require('frame');
 
-module.exports = {
-	data: {
-		name: 'starter',
-		description: "View and change the ticket starter message",
-		options: [{
-			name: 'message',
-			description: "The new message to send when a ticket is opened",
-			type: 3,
-			required: false
-		}]
-	},
-	usage: [
-		'- View and optionally clear the current message',
-		' [message] - Set a new ticket starter message'
-	],
-	extra: `Available variables:\n${Object.keys(KEYS).map(k => `${k} - ${KEYS[k]}.desc`).join("\n")}`,
+class Command extends SlashCommand {
+	#bot;
+	#stores;
+
+	constructor(bot, stores) {
+		super({
+			name: 'starter',
+			description: "View and change the ticket starter message",
+			options: [{
+				name: 'message',
+				description: "The new message to send when a ticket is opened",
+				type: 3,
+				required: false
+			}],
+			usage: [
+				'- View and optionally clear the current message',
+				' [message] - Set a new ticket starter message'
+			],
+			extra: `Available variables:\n${Object.keys(KEYS).map(k => `${k} - ${KEYS[k]}.desc`).join("\n")}`,
+		})
+		this.#bot = bot;
+		this.#stores = stores;
+	}
+
 	async execute(ctx) {
 		var message = ctx.options.getString('message')?.trim();
 		var cfg = await ctx.client.stores.configs.get(ctx.guild.id);
 
 		if(message) {
-			if(cfg) await ctx.client.stores.configs.update(ctx.guild.id, {starter: message});
-			else await ctx.client.stores.configs.create(ctx.guild.id, {starter: message});
+			cfg.starter = message;
+			await cfg.save();
 
 			return "Config updated.";
 		}
@@ -78,3 +87,5 @@ module.exports = {
 		return;
 	}
 }
+
+module.exports = (bot, stores) => new Command(bot, stores);

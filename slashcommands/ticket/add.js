@@ -1,26 +1,36 @@
-module.exports = {
-	data: {
-		name: 'add',
-		description: "Add users to a ticket",
-		options: [
-			{
-				name: 'user',
-				description: "A user to add to the ticket",
-				type: 6,
-				required: true
-			},
-			{
-				name: 'ticket',
-				description: "The ticket to add a user to",
-				type: 3,
-				required: false
-			}
-		]
-	},
-	usage: [
-		"[user] - Adds a user to the ticket belonging to the current channel",
-		"[user] [ticket] - Adds a user to another ticket"
-	],
+const { Models: { SlashCommand } } = require('frame');
+
+class Command extends SlashCommand {
+	#bot;
+	#stores;
+
+	constructor(bot, stores) {
+		super({
+			name: 'add',
+			description: "Add users to a ticket",
+			options: [
+				{
+					name: 'user',
+					description: "A user to add to the ticket",
+					type: 6,
+					required: true
+				},
+				{
+					name: 'ticket',
+					description: "The ticket to add a user to",
+					type: 3,
+					required: false
+				}
+			],
+			usage: [
+				"[user] - Adds a user to the ticket belonging to the current channel",
+				"[user] [ticket] - Adds a user to another ticket"
+			]
+		})
+		this.#bot = bot;
+		this.#stores = stores;
+	}
+
 	async execute(ctx) {
 		var cfg = await ctx.client.stores.configs.get(ctx.guild.id);
 		var limit = cfg?.user_limit ?? 10;
@@ -56,11 +66,7 @@ module.exports = {
 				'SEND_MESSAGES': true
 			})
 			ticket.users = ticket.users.concat(user.id);
-			ticket = await ctx.client.stores.tickets.update(
-				ctx.guild.id,
-				ticket.hid,
-				{users: ticket.users}
-			)
+			await ticket.save();
 
 			await ctx.client.handlers.ticket.editTicket({
 				ticket,
@@ -74,3 +80,5 @@ module.exports = {
 		return "User added to ticket.";
 	}
 }
+
+module.exports = (bot, stores) => new Command(bot, stores);

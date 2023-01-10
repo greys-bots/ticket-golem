@@ -1,20 +1,29 @@
 const { confButtons } = require('../../extras');
+const { Models: { SlashCommand } } = require('frame');
 
-module.exports = {
-	data: {
-		name: 'close',
-		description: "Close a ticket",
-		options: [{
-			name: 'ticket',
-			description: "The ticket to close",
-			type: 3,
-			required: false
-		}]
-	},
-	usage: [
-		'- Closes the ticket associated with the current channel',
-		"[ticket] - Closes another ticket"
-	],
+class Command extends SlashCommand {
+	#bot;
+	#stores;
+
+	constructor(bot, stores) {
+		super({
+			name: 'close',
+			description: "Close a ticket",
+			options: [{
+				name: 'ticket',
+				description: "The ticket to close",
+				type: 3,
+				required: false
+			}],
+			usage: [
+				'- Closes the ticket associated with the current channel',
+				"[ticket] - Closes another ticket"
+			]
+		})
+		this.#bot = bot;
+		this.#stores = stores;
+	}
+
 	async execute(ctx) {
 		var cfg = await ctx.client.stores.configs.get(ctx.guild.id);
 		var hid = ctx.options.getString('ticket')?.toLowerCase().trim();
@@ -54,11 +63,8 @@ module.exports = {
 			if(ctx.channel.id == ticket.channel_id) channel = ctx.channel;
 			else channel = await ctx.guild.channels.fetch(ticket.channel_id);
 			
-			ticket = await ctx.client.stores.tickets.update(
-				ctx.guild.id,
-				ticket.hid,
-				{closed: true}
-			)
+			ticket.closed = true;
+			await ticket.save();
 			
 			for(var u of ticket.users) {
 				await channel.permissionOverwrites.edit(u.id, {
@@ -80,3 +86,5 @@ module.exports = {
 		return;
 	}
 }
+
+module.exports = (bot, stores) => new Command(bot, stores);

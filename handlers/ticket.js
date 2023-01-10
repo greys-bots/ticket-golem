@@ -1,4 +1,4 @@
-const { MessageAttachment } = require("discord.js");
+const { AttachmentBuilder } = require("discord.js");
 const { starterVars: KEYS } = require('../extras');
 
 const COMPS = {
@@ -62,6 +62,10 @@ class TicketHandler {
 		bot.on("interactionCreate", (ctx) => this.handleInteractions(ctx));
 	}
 
+	formatTime(date, format = 'F') {
+		return `<t:${Math.floor(date.getTime() / 1000)}:${format}>`
+	}
+
 	async handleReactions(react, user) {
 		if(user.bot) return;
 
@@ -106,26 +110,38 @@ class TicketHandler {
 	}
 
 	async createTicket(ctx) {
-		var { msg, user, cfg } = ctx;
-		
-		var code = this.bot.utils.genCode(this.bot.chars);
+		var { msg, user, cfg, name, description } = ctx;
+
 		var time = new Date();
 
 		try {
-			var channel = await msg.guild.channels.create(`ticket-${code}`, {
-				topic: `Ticket ${code}`,
+			var tk = await this.bot.stores.tickets.create({
+				server_id: msg.guild.id,
+				opener: user.id,
+				users: [user.id],
+				timestamp: time,
+				name,
+				description
+			});
+			var code = tk.hid;
+			var n = name ? `${code}-${name}` : `ticket-${code}`;
+
+			var channel = await msg.guild.channels.create({
+				name: n,
+				topic: description ?? `Ticket ${code}`,
 				parent: cfg.category_id
 			})
 			await channel.lockPermissions(); //get perms from parent category
 			await channel.permissionOverwrites.edit(user.id, {
-				'VIEW_CHANNEL': true,
-				'SEND_MESSAGES': true
+				'ViewChannel': true,
+				'SendMessages': true
 			})
+			tk.channel_id = channel.id;
 
 			var mdata = {
 				embeds: [{
-					title: "Untitled Ticket",
-					description: "(no description)",
+					title: name ?? "Untitled Ticket",
+					description: description ?? "(no description)",
 					fields: [
 						{name: "Ticket Opener", value: `${user}`},
 						{name: "Ticket Users", value: `${user}`}
@@ -161,16 +177,11 @@ class TicketHandler {
 
 			var message = await channel.send(mdata)
 			message.pin();
-
-			await this.bot.stores.tickets.create(msg.guild.id, code, {
-				channel_id: channel.id,
-				first_message: message.id,
-				opener: user.id,
-				users: [user.id],
-				timestamp: time.toISOString()
-			});
+			tk.first_message = message.id;
+			await tk.save();
 		} catch(e) {
 			console.log(e);
+			await tk.delete();
 			return Promise.reject(e.message || e);
 		}
 
@@ -195,11 +206,12 @@ class TicketHandler {
 			var users;
 			if(ticket.users.length > 20) {
 				users = ticket.users.slice(0, 21)
-					.map(u => `<@${u.id}>`)
+					.map(u => `<@${u}>`)
 					.join("\n") +
 					`\nand ${ticket.users.length - 20} more`;
-			} else users = ticket.users.map(u => `<@${u.id}>`).join("\n");
+			} else users = ticket.users.map(u => `<@${u}>`).join("\n");
 
+			console.log(ticket);
 			await message.edit({
 				embeds: [{
 					title: ticket.name ?? "Untitled Ticket",
@@ -207,7 +219,7 @@ class TicketHandler {
 					fields: [
 						{
 							name: "Ticket Opener",
-							value: `<@${ticket.opener.id}>`
+							value: `<@${ticket.opener}>`
 						},
 						{
 							name: "Ticket Users",
@@ -242,6 +254,8 @@ class TicketHandler {
 			channel,
 			user,
 		} = ctx;
+		await ticket.getUsers();
+		await ticket.getOpener();
 
 		try {
 			var messages = await channel.messages.fetch({limit: 100});
@@ -262,14 +276,16 @@ class TicketHandler {
 							`\r\n${m.content}`].join(""))
 			})
 
-			var file = new MessageAttachment(Buffer.from([
-				`Ticket name: ${ticket.name || "Untitled Ticket"}\r\n`,
-				`Ticket description: ${ticket.description || "(no description)"}\r\n`,
-				`Ticket opened: ${this.bot.formatTime(new Date(ticket.timestamp))}\r\n`,
-				`Ticket opener: ${ticket.opener.username}#${ticket.opener.discriminator} (${ticket.opener.id})\r\n`,
-				`Users involved:\r\n${ticket.users.map(u => `${u.username}#${u.discriminator} (${u.id})`).join("\r\n")}`,"\r\n------\r\n"
-			].join("")+data.reverse().join("\r\n------\r\n")),
-			channel.name+".txt")
+			var file = new AttachmentBuilder(
+				Buffer.from([
+					`Ticket name: ${ticket.name || "Untitled Ticket"}\r\n`,
+					`Ticket description: ${ticket.description || "(no description)"}\r\n`,
+					`Ticket opened: ${this.bot.formatTime(new Date(ticket.timestamp))}\r\n`,
+					`Ticket opener: ${ticket.resolved.opener.username}#${ticket.resolved.opener.discriminator} (${ticket.resolved.opener.id})\r\n`,
+					`Users involved:\r\n${ticket.resolved.users.map(u => `${u.username}#${u.discriminator} (${u.id})`).join("\r\n")}`,"\r\n------\r\n"
+				].join("")+data.reverse().join("\r\n------\r\n")),
+				{name: channel.name+".txt"}
+			)
 
 			var date = new Date();
 
@@ -278,10 +294,10 @@ class TicketHandler {
 				fields: [
 					{name: "Ticket name", value: ticket.name || "Untitled Ticket"},
 					{name: "Ticket description", value: ticket.description || "(no description)"},
-					{name: "Time opened", value: this.bot.formatTime(new Date(ticket.timestamp))},
-					{name: "Opener", value: `${ticket.opener.username}#${ticket.opener.discriminator} (${ticket.opener.id})`},
-					{name: "Users involved", value: ticket.users.map(u => `${u.username}#${u.discriminator} (${u.id})`).join("\n")},
-					{name: "Time closed", value: this.bot.formatTime(date)}
+					{name: "Time opened", value: this.formatTime(new Date(ticket.timestamp))},
+					{name: "Opener", value: `${ticket.resolved.opener.username}#${ticket.resolved.opener.discriminator} (${ticket.resolved.opener.id})`},
+					{name: "Users involved", value: ticket.resolved.users.map(u => `${u.username}#${u.discriminator} (${u.id})`).join("\n")},
+					{name: "Time closed", value: this.formatTime(date)}
 				],
 				timestamp: date.toISOString(),
 				color: 5821280
@@ -298,7 +314,7 @@ class TicketHandler {
 			
 			await c.send({embeds: [embed], files: [file]});
 			await channel.delete("Ticket archived.");
-			await this.bot.stores.tickets.delete(channel.guild.id, ticket.hid);
+			await ticket.delete();
 		} catch(e) {
 			console.log(e);
 			await user.send("Error during operation:\n"+(e.message || e));
@@ -353,8 +369,8 @@ class TicketHandler {
 			title: ticket.name,
 			description: ticket.description,
 			fields: [
-				{name: "Ticket Opener", value: `${ticket.opener}`},
-				{name: "TIcket Users", value: ticket.users.map(u => `${u}`).join("\n")},
+				{name: "Ticket Opener", value: `<@${ticket.opener}>`},
+				{name: "TIcket Users", value: ticket.users.map(u => `<@${u}>`).join("\n")},
 			],
 			color: 2074412,
 			footer: {
@@ -363,148 +379,89 @@ class TicketHandler {
 			timestamp: ticket.timestamp
 		}
 
-		var action;
-		if(react) {
-			switch(react.emoji.name) {
-				case '✏️':
-					action = 'edit';
-					break;
-				case '🔒':
-					action = 'close';
-					break;
-				case '🔓':
-					action = 'open';
-					break;
-				case '📕':
-					action = 'archive';
-					break;
-				default:
-					return;
-			}
-			await react.remove()
-		} else action = interaction.customId;
+		var action = interaction.customId;
 
 		var resp;
 		switch(action) {
 			case "edit":
 				if(ticket.closed) return;
+				var nchk = await this.bot.utils.checkTicketPerms({
+					msg,
+					ticket,
+					user,
+					cfg,
+					action: 'rename'
+				});
+				var dchk = await this.bot.utils.checkTicketPerms({
+					msg,
+					ticket,
+					user,
+					cfg,
+					action: 'description'
+				})
+				if(!nchk && !dchk) return await ctx.reply({
+					content: "You do not have permission to edit this ticket.",
+					ephemeral: true
+				});
 
 				var message;
-				var data = {
-					content: "Choose what to edit.",
+				var mdata = {
+					title: "Edit ticket",
+					custom_id: `question-add-${ticket.hid}`,
+					components: [ ]
+				}
+
+				if(nchk) mdata.components.push({
+					type: 1,
 					components: [{
-						type: 1,
-						components: [
-							{
-								type: 2,
-								style: 1,
-								label: 'Name',
-								emoji: '1️⃣',
-								custom_id: 'name'
-							},
-							{
-								type: 2,
-								style: 2,
-								label: 'Description',
-								emoji: '2️⃣',
-								custom_id: 'desc'
-							},
-							{
-								type: 2,
-								style: 4,
-								label: 'Cancel',
-								emoji: '❌',
-								custom_id: 'cancel'
-							},
-						]
+						type: 4,
+						custom_id: 'name',
+						label: "Ticket name",
+						style: 1,
+						max_length: 90,
+						placeholder: (
+							"Need help with the bot"
+						),
+						value: ticket.name,
+						required: true
 					}]
-				}
+				});
 
-				if(interaction) message = await interaction.reply({...data, fetchReply: true});
-				else message = await msg.channel.send(data);
+				if(dchk) mdata.components.push({
+					type: 1,
+					components: [{
+						type: 4,
+						custom_id: 'description',
+						label: "Ticket description",
+						style: 2,
+						max_length: 2000,
+						placeholder: (
+							"The thing I need help with is..."
+						),
+						value: ticket.description,
+						required: true
+					}]
+				});
 
-				var choice = await this.bot.utils.handleChoices(this.bot, message, user, [
-					{
-						name: 'name',
-						accepted: ['1', 'name', '1️⃣']
-					},
-					{
-						name: 'desc',
-						accepted: ['2', 'desc', 'description', '2️⃣']
-					},
-					{
-						name: 'cancel',
-						accepted: ['cancel', 'x', 'no', 'stop', '❌']
-					}
-				]);
+				var m = await this.bot.utils.awaitModal(interaction, mdata, user, false, 300000)
+				if(!m) return await m.followUp("No data received.");
 
-				if(['none', 'cancel'].includes(choice.name)) return msg.channel.send("Action cancelled.");
-				if(choice.name == 'invalid') return msg.channel.send("Action cancelled due to invalid input.");
+				var name = ticket.name;
+				var desc = ticket.description;
+				if(nchk) name = m.fields.getField('name').value.trim();
+				if(dchk) desc = m.fields.getField('description').value.trim();
 
-				var txt;
-				switch(choice.name) {
-					case "name":
-						if(!(await this.bot.utils.checkTicketPerms({
-							msg,
-							ticket,
-							user,
-							cfg,
-							action: 'rename'
-						})))
-							return user.send("You do not have permission to edit this property of the ticket.");
-							
-						txt = "Enter the new name. You have 1 minute to do this. The name must be " + (100-(ticket.hid.length+1)) + " characters or less. Cancel the action by typing `cancel`.";
-						if(choice.interaction) await choice.interaction.reply(txt);
-						else await msg.channel.send(txt);
-						
-						resp = (await msg.channel.awaitMessages({filter: m => m.author.id == user.id, max: 1, time: 60000}))?.first();
-						if(!resp) return msg.channel.send("ERR: Timed out.");
-						if(resp.content.toLowerCase() == "cancel") return msg.channel.send("Action cancelled.");
-						if(resp.content.length > (100-(ticket.hid.length+1))) return msg.channel.send("ERR: Name too long. Must be between 1 and " + (100-(ticket.hid.length+1)) +" characters in length.");
+				ticket.name = name;
+				ticket.description = desc;
+				await ticket.save();
 
-						try {
-							ticket = await this.bot.stores.tickets.update(msg.channel.guild.id, ticket.hid, {name: resp.content});
-							await msg.channel.edit({name: `${ticket.hid}-${resp.content}`});
-						} catch(e) {
-							console.log(e);
-							return msg.channel.send(`Error:\n${e.message || e}`);
-						}
-						break;
-					case "desc":
-						if(!(await this.bot.utils.checkTicketPerms({
-							msg,
-							ticket,
-							user,
-							cfg,
-							action: 'description'
-						})))
-							return user.send("You do not have permission to edit this property of the ticket.");
-							
-						txt = "Enter the new description. You have 5 minutes to do this. The description must be 1024 characters or less. Cancel the action by typing `cancel`.";
-						if(choice.interaction) await choice.interaction.reply(txt);
-						else await msg.channel.send(txt);
-						
-						resp = (await msg.channel.awaitMessages({filter: m => m.author.id == user.id, max: 1, time: 300000}))?.first();
-						if(!resp) return msg.channel.send("ERR: Timed out.");
-						if(resp.content.toLowerCase() == "cancel") return msg.channel.send("Action cancelled.");
-						if(resp.content.length > 1024) return msg.channel.send("That description is too long. Must be between 1 and 1024 characters in length.");
-
-						try {
-							ticket = await this.bot.stores.tickets.update(msg.channel.guild.id, ticket.hid, {description: resp.content});
-							await msg.channel.edit({topic: resp.content})
-						} catch(e) {
-							console.log(e);
-							return msg.channel.send(`Error:\n${e.message || e}`);
-						}
-						break;
-				}
 				await this.editTicket({
 					ticket,
 					msg,
 					channel: msg.channel
 				})
 
-				await msg.channel.send("Ticket updated. Note that the channel itself may take time to update due to ratelimits.");
+				await m.followUp("Ticket updated. Note that the channel itself may take time to update due to ratelimits.");
 				break;
 			case "close":
 				if(!(await this.bot.utils.checkTicketPerms({
@@ -550,13 +507,14 @@ class TicketHandler {
 				try {
 					var channel = await this.bot.channels.fetch(ticket.channel_id);
 					for(var i = 0; i < ticket.users.length; i++) {
-						await channel.permissionOverwrites.edit(ticket.users[i].id, {
-							'VIEW_CHANNEL': true,
-							'SEND_MESSAGES': false
+						await channel.permissionOverwrites.edit(ticket.users[i], {
+							'ViewChannel': true,
+							'SendMessages': false
 						})
 					}
 
-					ticket = await this.bot.stores.tickets.update(msg.channel.guild.id, ticket.hid, {closed: true});
+					ticket.closed = true;
+					await ticket.save();
 					await this.editTicket({
 						ticket,
 						msg,
@@ -585,13 +543,14 @@ class TicketHandler {
 				try {
 					var channel = await this.bot.channels.fetch(ticket.channel_id);
 					for(var i = 0; i < ticket.users.length; i++) {
-						await channel.permissionOverwrites.edit(ticket.users[i].id, {
-							'VIEW_CHANNEL': true,
-							'SEND_MESSAGES': true
+						await channel.permissionOverwrites.edit(ticket.users[i], {
+							'ViewChannel': true,
+							'SendMessages': true
 						})
 					}
 
-					ticket = await this.bot.stores.tickets.update(msg.channel.guild.id, ticket.hid, {closed: false});
+					ticket.closed = false;
+					await ticket.save();
 					await this.editTicket({
 						ticket,
 						msg,
@@ -606,7 +565,7 @@ class TicketHandler {
 				else await msg.channel.send("Ticket re-opened.");
 				break;
 			case "archive":
-				if(!member.permissions.has("MANAGE_CHANNELS"))
+				if(!member.permissions.has("ManageChannels"))
 					return user.send("You do not have permission to archive this ticket.");
 
 				var message;

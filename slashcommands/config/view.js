@@ -1,11 +1,21 @@
-module.exports = {
-	data: {
-		name: 'view',
-		description: "View the current config"
-	},
-	usage: [
-		"- View the server's current config"
-	],
+const { Models: { SlashCommand } } = require('frame');
+
+class Command extends SlashCommand {
+	#bot;
+	#stores;
+
+	constructor(bot, stores) {
+		super({
+			name: 'view',
+			description: "View the current config",
+			usage: [
+				"- View the server's current config"
+			]
+		})
+		this.#bot = bot;
+		this.#stores = stores;
+	}
+
 	async execute(ctx) {
 		var cfg = await ctx.client.stores.configs.get(ctx.guild.id);
 		if(!cfg) cfg = {};
@@ -25,3 +35,5 @@ module.exports = {
 		}]};
 	}
 }
+
+module.exports = (bot, stores) => new Command(bot, stores);

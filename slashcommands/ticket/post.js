@@ -1,19 +1,30 @@
-module.exports = {
-	data: {
-		name: 'post',
-		description: "Post a ticket opener message",
-		options: [{
-			name: 'channel',
-			description: "A channel to post to",
-			type: 7,
-			channel_types: [0, 5, 10, 11, 12],
-			required: false
-		}]
-	},
-	usage: [
-		'- Post the opener message to the current channel',
-		"[channel] - Post the message to another channel"
-	],
+const { Models: { SlashCommand } } = require('frame');
+
+class Command extends SlashCommand {
+	#bot;
+	#stores;
+
+	constructor(bot, stores) {
+		super({
+			name: 'post',
+			description: "Post a ticket opener message",
+			options: [{
+				name: 'channel',
+				description: "A channel to post to",
+				type: 7,
+				channel_types: [0, 5, 10, 11, 12],
+				required: false
+			}],
+			usage: [
+				'- Post the opener message to the current channel',
+				"[channel] - Post the message to another channel"
+			],
+			permissions: ['manageMessages']
+		})
+		this.#bot = bot;
+		this.#stores = stores;
+	}
+
 	async execute(ctx) {
 		var channel = ctx.options.getChannel('channel');
 		if(!channel) channel = ctx.channel;
@@ -39,11 +50,12 @@ module.exports = {
 				}]
 			});
 
-			await ctx.client.stores.posts.create(
-				ctx.guild.id,
-				channel.id,
-				message.id
-			)
+			var post = await ctx.client.stores.posts.create({
+				server_id: ctx.guild.id,
+				channel_id: channel.id,
+				message_id: message.id
+			})
+			console.log(post);
 		} catch(e) {
 			return {
 				content: "Error: " + (e.message ?? e),
@@ -52,6 +64,7 @@ module.exports = {
 		}
 
 		return "Post sent.";
-	},
-	permissions: ['MANAGE_MESSAGES']
+	}
 }
+
+module.exports = (bot, stores) => new Command(bot, stores);

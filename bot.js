@@ -1,5 +1,6 @@
+require('dotenv').config();
+
 const {
-	Client,
 	GatewayIntentBits: Intents,
 	Partials,
 	Options
@@ -10,9 +11,6 @@ const {
 	Handlers
 } = require('frame');
 const fs = require("fs");
-const path = require("path");
-
-require('dotenv').config();
 
 const bot = new FrameClient({
 	intents: [
@@ -54,9 +52,6 @@ async function setup() {
 	var { db, stores } = await Handlers.DatabaseHandler(bot, __dirname + '/stores');
 	bot.db = db;
 	bot.stores = stores;
-
-	files = fs.readdirSync(__dirname + "/events");
-	files.forEach(f => bot.on(f.slice(0,-3), (...args) => require(__dirname + "/events/"+f)(...args,bot)));
 
 	bot.handlers = {};
 	bot.handlers.interaction = Handlers.InteractionHandler(bot, __dirname + '/slashcommands');

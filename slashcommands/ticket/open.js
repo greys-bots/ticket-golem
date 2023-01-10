@@ -1,18 +1,28 @@
-module.exports = {
-	data: {
-		name: 'open',
-		description: "Re-open a ticket",
-		options: [{
-			name: 'ticket',
-			description: "The ticket to open",
-			type: 3,
-			required: false
-		}]
-	},
-	usage: [
-		'- Opens the ticket associated with the current channel',
-		"[ticket] - Opens another ticket"
-	],
+const { Models: { SlashCommand } } = require('frame');
+
+class Command extends SlashCommand {
+	#bot;
+	#stores;
+
+	constructor(bot, stores) {
+		super({
+			name: 'open',
+			description: "Re-open a ticket",
+			options: [{
+				name: 'ticket',
+				description: "The ticket to open",
+				type: 3,
+				required: false
+			}],
+			usage: [
+				'- Opens the ticket associated with the current channel',
+				"[ticket] - Opens another ticket"
+			]
+		})
+		this.#bot = bot;
+		this.#stores = stores;
+	}
+
 	async execute(ctx) {
 		var cfg = await ctx.client.stores.configs.get(ctx.guild.id);
 		var hid = ctx.options.getString('ticket')?.toLowerCase().trim();
@@ -35,11 +45,8 @@ module.exports = {
 			if(ctx.channel.id == ticket.channel_id) channel = ctx.channel;
 			else channel = await ctx.guild.channels.fetch(ticket.channel_id);
 			
-			ticket = await ctx.client.stores.tickets.update(
-				ctx.guild.id,
-				ticket.hid,
-				{closed: false}
-			)
+			ticket.closed = false;
+			await ticket.save();
 			
 			for(var u of ticket.users) {
 				await channel.permissionOverwrites.edit(u.id, {
@@ -60,3 +67,5 @@ module.exports = {
 		return "Ticket opened."
 	}
 }
+
+module.exports = (bot, stores) => new Command(bot, stores);

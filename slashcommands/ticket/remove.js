@@ -1,26 +1,36 @@
-module.exports = {
-	data: {
-		name: 'remove',
-		description: "Remove users from a ticket",
-		options: [
-			{
-				name: 'user',
-				description: "A user to remove from the ticket",
-				type: 6,
-				required: true
-			},
-			{
-				name: 'ticket',
-				description: "The ticket to remove a user from",
-				type: 3,
-				required: false
-			}
-		]
-	},
-	usage: [
-		"[user] - Removes a user from the ticket belonging to the current channel",
-		"[user] [ticket] - Removes a user from another ticket"
-	],
+const { Models: { SlashCommand } } = require('frame');
+
+class Command extends SlashCommand {
+	#bot;
+	#stores;
+
+	constructor(bot, stores) {
+		super({
+			name: 'remove',
+			description: "Remove users from a ticket",
+			options: [
+				{
+					name: 'user',
+					description: "A user to remove from the ticket",
+					type: 6,
+					required: true
+				},
+				{
+					name: 'ticket',
+					description: "The ticket to remove a user from",
+					type: 3,
+					required: false
+				}
+			],
+			usage: [
+				"[user] - Removes a user from the ticket belonging to the current channel",
+				"[user] [ticket] - Removes a user from another ticket"
+			]
+		})
+		this.#bot = bot;
+		this.#stores = stores;
+	}
+
 	async execute(ctx) {
 		var cfg = await ctx.client.stores.configs.get(ctx.guild.id);
 		
@@ -49,11 +59,7 @@ module.exports = {
 			
 			await channel.permissions.delete(user.id);
 			ticket.users = ticket.users.filter(x => x != user.id);
-			ticket = await ctx.client.stores.tickets.update(
-				ctx.guild.id,
-				ticket.hid,
-				{users: ticket.users}
-			)
+			await ticket.save();
 
 			await ctx.client.handlers.ticket.editTicket({
 				ticket,
@@ -67,3 +73,5 @@ module.exports = {
 		return "User removed from ticket.";
 	}
 }
+
+module.exports = (bot, stores) => new Command(bot, stores);
