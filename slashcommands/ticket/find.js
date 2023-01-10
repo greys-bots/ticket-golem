@@ -46,7 +46,7 @@ class Command extends SlashCommand {
 				"(a mix of above) - Find tickets matching all criteria"
 			],
 			extra: "Search terms look through the ticket's name and description, NOT messages sent within them.",
-			permissions: ["manageChannels"]
+			permissions: ["ManageChannels"]
 		})
 		this.#bot = bot;
 		this.#stores = stores;

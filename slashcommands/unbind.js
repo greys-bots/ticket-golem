@@ -13,7 +13,7 @@ class Command extends SlashCommand {
 				'Right click a message -> `unbind`'
 			],
 			ephemeral: true,
-			permissions: ['manageMessages'],
+			permissions: ['ManageMessages'],
 			guildOnly: true
 		})
 		this.#bot = bot;

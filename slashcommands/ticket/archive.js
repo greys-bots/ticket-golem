@@ -18,7 +18,7 @@ class Command extends SlashCommand {
 				"- Archive ticket associated with the current channel",
 				"[ticket] - Archive a specific ticket"
 			],
-			permissions: ["manageChannels"]
+			permissions: ["ManageChannels"]
 		})
 		this.#bot = bot;
 		this.#stores = stores;

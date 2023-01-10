@@ -13,7 +13,7 @@ class Command extends SlashCommand {
 				'Right click a message -> `bind`'
 			],
 			ephemeral: true,
-			permissions: ['manageMessages'],
+			permissions: ['ManageMessages'],
 			guildOnly: true
 		})
 

@@ -20,7 +20,7 @@ class Command extends SlashCommand {
 				'[ticket] - Deletes a specific ticket'
 			],
 			extra: "This command does NOT archive the ticket. It simply deletes the entire channel.",
-			permissions: ['manageChannels']
+			permissions: ['ManageChannels']
 		})
 		this.#bot = bot;
 		this.#stores = stores;

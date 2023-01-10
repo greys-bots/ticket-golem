@@ -18,7 +18,7 @@ class Command extends SlashCommand {
 				'- View all tickets in the server',
 				'[ticket] - View info for a specific ticket'
 			],
-			permissions: ['manageChannels'],
+			permissions: ['ManageChannels'],
 			ephemeral: true
 		})
 		this.#bot = bot;

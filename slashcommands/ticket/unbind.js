@@ -26,7 +26,7 @@ class Command extends SlashCommand {
 				"[message] - Unbind the reaction from a message in the current channel",
 				"[message] [channel] - Unbind a reaction from a message in another channel"
 			],
-			permissions: ["manageChannels"]
+			permissions: ["ManageChannels"]
 		})
 		this.#bot = bot;
 		this.#stores = stores;

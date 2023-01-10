@@ -19,7 +19,7 @@ class Command extends SlashCommand {
 				'- Post the opener message to the current channel',
 				"[channel] - Post the message to another channel"
 			],
-			permissions: ['manageMessages']
+			permissions: ['ManageMessages']
 		})
 		this.#bot = bot;
 		this.#stores = stores;

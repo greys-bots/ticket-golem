@@ -67,8 +67,8 @@ class Command extends SlashCommand {
 			await ticket.save();
 			
 			for(var u of ticket.users) {
-				await channel.permissionOverwrites.edit(u.id, {
-					'SEND_MESSAGES': false
+				await channel.permissionOverwrites.edit(u, {
+					'SendMessages': false
 				})
 			}
 

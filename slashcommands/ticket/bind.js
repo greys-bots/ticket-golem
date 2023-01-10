@@ -26,7 +26,7 @@ class Command extends SlashCommand {
 				"[message] - Bind the reaction to a message in the current channel",
 				"[message] [channel] - Bind a reaction to a message in another channel"
 			],
-			permissions: ["manageMessages"]
+			permissions: ["ManageMessages"]
 		})
 		this.#bot = bot;
 		this.#stores = stores;

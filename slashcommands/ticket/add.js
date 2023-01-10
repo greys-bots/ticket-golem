@@ -40,7 +40,6 @@ class Command extends SlashCommand {
 		if(hid) ticket = await ctx.client.stores.tickets.get(ctx.guild.id, hid);
 		else ticket = await ctx.client.stores.tickets.getByChannel(ctx.guild.id, ctx.channel.id);
 		if(!ticket) return "Ticket not found.";
-		ticket.users = ticket.users.map(u => u.id);
 
 		var check = await ctx.client.utils.checkTicketPerms({
 			msg: ctx,
