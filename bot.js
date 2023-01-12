@@ -52,6 +52,7 @@ async function setup() {
 	var { db, stores } = await Handlers.DatabaseHandler(bot, __dirname + '/stores');
 	bot.db = db;
 	bot.stores = stores;
+	var files;
 
 	bot.handlers = {};
 	bot.handlers.interaction = Handlers.InteractionHandler(bot, __dirname + '/slashcommands');

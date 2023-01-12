@@ -56,7 +56,6 @@ class Command extends SlashCommand {
 			if(ctx.channel.id == ticket.channel_id) channel = ctx.channel;
 			else channel = await ctx.guild.channels.fetch(ticket.channel_id);
 
-			await channel.edit({name: `${ticket.hid}-${name}`})
 			ticket.name = name;
 			await ticket.save();
 

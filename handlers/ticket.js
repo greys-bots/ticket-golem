@@ -211,7 +211,6 @@ class TicketHandler {
 					`\nand ${ticket.users.length - 20} more`;
 			} else users = ticket.users.map(u => `<@${u}>`).join("\n");
 
-			console.log(ticket);
 			await message.edit({
 				embeds: [{
 					title: ticket.name ?? "Untitled Ticket",
@@ -236,6 +235,11 @@ class TicketHandler {
 					type: 1,
 					components: ticket.closed ? COMPS.closed : COMPS.open
 				}]
+			})
+
+			await channel.edit({
+				name: `${ticket.hid}-${ticket.name}`,
+				topic: ticket.description
 			})
 		} catch(e) {
 			if(!channel) throw new Error("Couldn't get channel associated with that ticket.");
@@ -306,13 +310,13 @@ class TicketHandler {
 			var c;
 			if(!cfg?.archives_id) {
 				await user.send({embeds: [embed], files: [file]})
-				return;
+			} else {
+				c = await channel.guild.channels.fetch(cfg.archives_id);
+				if(!c) return "Couldn't find your archives channel; please reconfigure it.";
+				
+				await c.send({embeds: [embed], files: [file]});
 			}
-
-			c = await channel.guild.channels.fetch(cfg.archives_id);
-			if(!c) return "Couldn't find your archives channel; please reconfigure it.";
-			
-			await c.send({embeds: [embed], files: [file]});
+				
 			await channel.delete("Ticket archived.");
 			await ticket.delete();
 		} catch(e) {
@@ -499,7 +503,7 @@ class TicketHandler {
 
 				var conf = await this.bot.utils.getConfirmation(this.bot, message, user);
 				if(conf.msg) {
-					if(conf.interaction) await conf.interaction.reply(conf.msg);
+					if(interaction) await interaction.followUp(conf.msg);
 					else await msg.channel.send(conf.msg);
 					return;
 				}
@@ -522,12 +526,12 @@ class TicketHandler {
 					})
 				} catch(e) {
 					console.log(e);
-					if(conf.interaction) await conf.interaction.reply(`Error:\n${e.message || e}`);
+					if(interaction) await interaction.followUp(`Error:\n${e.message || e}`);
 					else await msg.chanel.send(`Error:\n${e.message || e}`);
 					return
 				}
 
-				if(conf.interaction) await conf.interaction.reply("Ticket closed.");
+				if(interaction) await interaction.followUp("Ticket closed.");
 				else await msg.channel.send("Ticket closed.");
 				break;
 			case "open":
@@ -561,7 +565,7 @@ class TicketHandler {
 					msg.channel.send(`Error:\n${e.message || e}`);
 				}
 
-				if(interaction) await interaction.reply("Ticket re-opened.");
+				if(interaction) await interaction.followUp("Ticket re-opened.");
 				else await msg.channel.send("Ticket re-opened.");
 				break;
 			case "archive":
@@ -578,13 +582,13 @@ class TicketHandler {
 								type: 2,
 								style: 3,
 								label: "Archive",
-								custom_id: 'confirm'
+								custom_id: 'yes'
 							},
 							{
 								type: 2,
 								style: 2,
 								label: 'Cancel',
-								custom_id: 'cancel'
+								custom_id: 'no'
 							}
 						]
 					}]
@@ -595,7 +599,7 @@ class TicketHandler {
 
 				var conf = await this.bot.utils.getConfirmation(this.bot, message, user);
 				if(conf.msg) {
-					if(conf.interaction) await conf.interaction.reply(conf.msg);
+					if(interaction) await interaction.followUp(conf.msg);
 					else msg.channel.send(conf.msg);
 					return;
 				}

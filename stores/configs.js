@@ -39,7 +39,7 @@ class ConfigStore extends DataStore {
 
 	async create(data = {}) {
 		try {
-			await this.db.query(`INSERT INTO configs (
+			var c = await this.db.query(`INSERT INTO configs (
 				server_id,
 				category_id,
 				archives_id,
