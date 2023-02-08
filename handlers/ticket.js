@@ -71,7 +71,7 @@ class TicketHandler {
 
 		try {
 			if(react.partial) react = await react.fetch();
-			if(react.message.partial) var msg = await msg.fetch();
+			if(react.message.partial) var msg = await react.message.fetch();
 			else var msg = react.message;
 		} catch(e) {
 			if(!e.message.toLowerCase().includes("unknown message")) console.log(e);
