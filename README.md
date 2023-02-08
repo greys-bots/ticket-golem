@@ -11,14 +11,14 @@ Users can have a default of 5 tickets open at once, to prevent spam. By default,
 ## Getting started
 First off, invite the bot using the link in the above section.
 
-After inviting them, make sure you create a category that you want tickets to go in. Here's a recommended setup:
-![A "tickets" category with "open-a-ticket" and "ticket-archives" as channels inside](https://cdn.discordapp.com/attachments/613904722398674944/649676171067260928/unknown.png)
+After inviting them, make sure you create a category that you want tickets to go in. Here's a recommended setup:  
+![A "tickets" category with "open-a-ticket" and "ticket-archives" as channels inside](https://cdn.discordapp.com/attachments/587885462740271104/1072928883755733042/image.png)
 
 Where the `tickets` category is overall only visible to mods, but the `open-a-ticket` channel is visible to everyone. The latter is where you'll want to put the reaction post. Also, **make sure that Ticket Golem has the ability to `Manage Permissions` in that category**- this permission can't be given with a normal invite link.
 
-Next, `tg!setup`. Enter the name of the category (`tickets` in the above example) you want tickets to go in, then enter the name of the archives channel (`ticket-archives` above). If you'd like, you can skip the second part by typing `skip`, which will just make the bot DM you archives instead.
+Next, we have some command setup. Using `/config category`, enter the name of the category (`tickets` in the above example) you want tickets to go in. Then, using `/config archives`, enter the name of the archives channel (`ticket-archives` above). You can skip this second step if you'd rather have archives DM'd to you.
 
-To finish up, use `tg!post [channel]` in order to post the starter message in the given channel. If you want a custom message, send that in the channel first, and then use `tg!bind [channel] [message ID]` to bind the reaction.
+To finish up, use `/ticket post [channel]` in order to post the starter message in the given channel. If you want a custom message, send that in the channel first, and then use `/bind [channel] [message ID]` to bind the reaction.
 
 Now you're all set!
 
