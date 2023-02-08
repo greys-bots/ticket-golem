@@ -403,7 +403,7 @@ class TicketHandler {
 					cfg,
 					action: 'description'
 				})
-				if(!nchk && !dchk) return await ctx.reply({
+				if(!nchk && !dchk) return await interaction.reply({
 					content: "You do not have permission to edit this ticket.",
 					ephemeral: true
 				});
