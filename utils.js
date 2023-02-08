@@ -103,7 +103,7 @@ module.exports = {
 
 		if(cfg?.mod_only?.includes(action) && !member.permissions.has("ManageChannels"))
 			return false;
-		if(member.id != ticket.opener.id && !member.permissions.has("ManageChannels"))
+		if(member.id != ticket.opener && !member.permissions.has("ManageChannels"))
 			return false;
 
 		return true;
