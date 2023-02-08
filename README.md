@@ -1,12 +1,12 @@
 # Ticket Golem
-*A Minecraft themed Discord bot for support tickets.*
+*A straightforward Discord bot for support tickets.*
 
 ## What's this?
-Ticket Golem is a Discord bot created to help out with support tickets. Admins can send a default post, or specify their own post, for server members to react to in order to open support tickets. Their prefix is `tg!`, and you can invite them with [this link](https://discordapp.com/api/oauth2/authorize?client_id=649629984930922506&permissions=60496&scope=bot).
+Ticket Golem is a Discord bot created to help out with support tickets. Admins can send a default post, or specify their own post, for server members to interact with in order to open support tickets. You can invite them with [this link](https://discordapp.com/api/oauth2/authorize?client_id=649629984930922506&permissions=60496&scope=bot).
 
 When a ticket is opened, a brand new channel is created. Ticket Golem uses member-based permissions to allow and deny access to the channel, and members can be added/removed using appropriate commands.
 
-Users can have 5 tickets open at once, to prevent spam. At the moment, 10 server members (not including the ticket's opener) can be added to tickets by the bot, with other members having to be manually added- in the future this will likely be a configurable option.
+Users can have a default of 5 tickets open at once, to prevent spam. By default, 10 server members (not including the ticket's opener) can be added to tickets by the bot. Both of these are configurable
 
 ## Getting started
 First off, invite the bot using the link in the above section.
@@ -32,15 +32,15 @@ While TG has no hard limits for the total number of tickets opened in a server, 
 Deleting and archiving tickets will allow users to open more of them, so you shouldn't have to worry about limits as long as tickets are properly taken care of.
 
 ### Channel deletion handling
-Deleting a ticket's channel will automatically delete it from the tickets database. This is a quick shortcut to the `tg!delete` command, in case you have a lot of tickets to delete at once.
+Deleting a ticket's channel will automatically delete it from the tickets database. This is a quick shortcut to the `/ticket delete` command, in case you have a lot of tickets to delete at once.
 
 ### Ticket names and descriptions
 Users can edit their ticket to change the name or set a description. This will also change the channel's name/description for easier finding.
 
-This comes with the added bonus of being able to search through tickets using `tg!find`!
+This comes with the added bonus of being able to search through tickets using `/ticket find`!
 
-### Reaction-based usage
-Much of TG's ticket management features are reaction-based, making closing/opening, archiving, and deleting tickets all a matter of a few clicks. You can use commands for most of it as well, making the bot accessible for users that can't or prefer not to use reactions.
+### Button-based usage
+Much of TG's ticket management features are button-based, making closing/opening, archiving, and deleting tickets all a matter of a few clicks. You can use commands for most of it as well, making the bot accessible for users that can't or prefer not to use buttons.
 
 ## Self hosting
 ### Requirements
