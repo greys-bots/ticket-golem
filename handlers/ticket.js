@@ -487,13 +487,13 @@ class TicketHandler {
 								type: 2,
 								style: 4,
 								label: 'Close',
-								custom_id: 'confirm'
+								custom_id: 'yes'
 							},
 							{
 								type: 2,
 								style: 1,
 								label: 'Keep open',
-								custom_id: 'cancel'
+								custom_id: 'no'
 							},
 						]
 					}]
