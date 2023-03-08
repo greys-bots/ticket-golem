@@ -238,10 +238,11 @@ class TicketHandler {
 			})
 
 			await channel.edit({
-				name: `${ticket.hid}-${ticket.name}`,
-				topic: ticket.description
+				name: ticket.name ? `${ticket.hid}-${ticket.name}` : `ticket-${ticket.hid}`,
+				topic: ticket.description ?? `Ticket ${ticket.hid}`
 			})
 		} catch(e) {
+			console.log(e);
 			if(!channel) throw new Error("Couldn't get channel associated with that ticket.");
 			if(!msg) throw new Error("Couldn't get the ticket's first message.");
 			return {
