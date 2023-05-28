@@ -132,7 +132,7 @@ class TicketHandler {
 				parent: cfg.category_id
 			})
 			await channel.lockPermissions(); //get perms from parent category
-			await channel.permissionOverwrites.edit(user.id, {
+			await channel.permissionOverwrites.create(user.id, {
 				'ViewChannel': true,
 				'SendMessages': true
 			})
@@ -512,7 +512,7 @@ class TicketHandler {
 				try {
 					var channel = await this.bot.channels.fetch(ticket.channel_id);
 					for(var i = 0; i < ticket.users.length; i++) {
-						await channel.permissionOverwrites.edit(ticket.users[i], {
+						await channel.permissionOverwrites.create(ticket.users[i], {
 							'ViewChannel': true,
 							'SendMessages': false
 						})
@@ -548,7 +548,7 @@ class TicketHandler {
 				try {
 					var channel = await this.bot.channels.fetch(ticket.channel_id);
 					for(var i = 0; i < ticket.users.length; i++) {
-						await channel.permissionOverwrites.edit(ticket.users[i], {
+						await channel.permissionOverwrites.create(ticket.users[i], {
 							'ViewChannel': true,
 							'SendMessages': true
 						})
