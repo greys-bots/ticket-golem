@@ -51,6 +51,12 @@ const COMPS = {
 	]
 }
 
+async function sleep(ms) {
+	return new Promise((res, rej) => {
+		setTimeout(() => res(), ms ?? 1000)
+	})
+}
+
 class TicketHandler {
 	constructor(bot) {
 		this.bot = bot;
@@ -128,20 +134,16 @@ class TicketHandler {
 			var code = tk.hid;
 			var n = name ? `${code}-${name}` : `ticket-${code}`;
 
-			var parent = await msg.guild.channels.fetch(cfg.category_id);
-			var perms = parent.permissionOverwrites.cache.clone();
-			perms.set(user.id, {
-				id: user.id,
-				type: 1,
-				allow: BITS.ViewChannel | BITS.SendMessages,
-				deny: 0n
-			});
-
 			var channel = await msg.guild.channels.create({
 				name: n,
 				topic: description ?? `Ticket ${code}`,
-				parent: cfg.category_id,
-				permissionOverwrites: perms
+				parent: cfg.category_id
+			})
+			await channel.lockPermissions();
+			await sleep(500);
+			await channel.permissionOverwrites.create(user.id, {
+				'ViewChannel': true,
+				'SendMessages': true
 			})
 			tk.channel_id = channel.id;
 
