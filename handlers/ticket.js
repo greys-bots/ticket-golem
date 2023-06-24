@@ -1,4 +1,4 @@
-const { AttachmentBuilder } = require("discord.js");
+const { AttachmentBuilder, PermissionFlagsBits: BITS } = require("discord.js");
 const { starterVars: KEYS } = require('../extras');
 
 const COMPS = {
@@ -114,6 +114,8 @@ class TicketHandler {
 
 		var time = new Date();
 
+		if(!cfg.category_id) return Promise.reject("No ticket category set. Please have a mod set one.");
+
 		try {
 			var tk = await this.bot.stores.tickets.create({
 				server_id: msg.guild.id,
@@ -126,15 +128,20 @@ class TicketHandler {
 			var code = tk.hid;
 			var n = name ? `${code}-${name}` : `ticket-${code}`;
 
+			var parent = await msg.guild.channels.fetch(cfg.category_id);
+			var perms = parent.permissionOverwrites.cache.clone();
+			perms.set(user.id, {
+				id: user.id,
+				type: 1,
+				allow: BITS.ViewChannel | BITS.SendMessages,
+				deny: 0n
+			});
+
 			var channel = await msg.guild.channels.create({
 				name: n,
 				topic: description ?? `Ticket ${code}`,
-				parent: cfg.category_id
-			})
-			await channel.lockPermissions(); //get perms from parent category
-			await channel.permissionOverwrites.create(user.id, {
-				'ViewChannel': true,
-				'SendMessages': true
+				parent: cfg.category_id,
+				permissionOverwrites: perms
 			})
 			tk.channel_id = channel.id;
 
