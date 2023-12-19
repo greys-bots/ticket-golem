@@ -56,17 +56,6 @@ class Command extends SlashCommand {
 						value: "Limit the number of tickets that users can open in a server, preventing ticket spam"
 					},
 					{
-						name: 'Individual form customization',
-						value: [
-							'Every form can have the following customized:',
-							'- A name and description',
-							'- An acceptance message',
-							'- Roles added to users once accepted',
-							'- What channel responses go to',
-							'- A custom color!'
-						].join('\n')
-					},
-					{
 						name: "Need help? Join the support server:",
 						value: "[https://discord.gg/EvDmXGt](https://discord.gg/EvDmXGt)",
 						inline: true
