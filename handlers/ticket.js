@@ -150,6 +150,11 @@ class TicketHandler {
 					allow: ['ViewChannel', 'SendMessages']
 				},
 				{
+					id: msg.client.user.id,
+					type: 1,
+					allow: ['ViewChannel', 'SendMessages']
+				},
+				{
 					id: msg.guild.id, // @everyone uses the guild ID as a role ID
 					type: 0,
 					deny: ['ViewChannel']
