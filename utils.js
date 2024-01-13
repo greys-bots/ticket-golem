@@ -108,4 +108,99 @@ module.exports = {
 
 		return true;
 	},
+
+	async awaitChannelSelect(ctx, opts = {}) {
+		var { message, max, min, types, placeholder, defaults } = opts;
+		var components = [{
+			type: 1,
+			components: [{
+				type: 8,
+				custom_id: 'channel-select',
+				max_values: max,
+				min_values: min,
+				channel_types: types,
+				placeholder,
+				default_values: defaults
+			}]
+		}]
+
+		var reply;
+		if(ctx.replied || ctx.deferred) {
+			reply = await ctx.followUp({
+				content: message,
+				components
+			});
+		} else {
+			reply = await ctx.reply({
+				content: message,
+				components
+			});
+		}
+
+		try {
+			var resp = await reply.awaitMessageComponent({
+				filter: (intr) => intr.user.id == ctx.user.id && intr.customId == 'channel-select',
+				time: 60000
+			});
+		} catch(e) { console.error(e) }
+		if(!resp) return 'Nothing was selected.';
+		await resp.update({
+			components: [{
+				type: 1,
+				components: components[0].components.map(c => ({
+					...c,
+					disabled: true
+				}))
+			}]
+		});
+
+		return resp.values;
+	},
+
+	async awaitRoleSelect(ctx, opts = {}) {
+		var { message, max, min, placeholder, defaults } = opts;
+		var components = [{
+			type: 1,
+			components: [{
+				type: 6,
+				custom_id: 'role-select',
+				max_values: max,
+				min_values: min,
+				placeholder,
+				default_values: defaults
+			}]
+		}]
+
+		var reply;
+		if(ctx.replied || ctx.deferred) {
+			reply = await ctx.followUp({
+				content: message,
+				components
+			});
+		} else {
+			reply = await ctx.reply({
+				content: message,
+				components
+			});
+		}
+
+		try {
+			var resp = await reply.awaitMessageComponent({
+				filter: (intr) => intr.user.id == ctx.user.id && intr.customId == 'role-select',
+				time: 60000
+			});
+		} catch(e) { console.error(e) }
+		if(!resp) return 'Nothing was selected.';
+		await resp.update({
+			components: [{
+				type: 1,
+				components: components[0].components.map(c => ({
+					...c,
+					disabled: true
+				}))
+			}]
+		});
+
+		return resp.values;
+	}
 }

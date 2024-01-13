@@ -61,8 +61,8 @@ class Command extends SlashCommand {
 			else channel = await ctx.guild.channels.fetch(ticket.channel_id);
 
 			await channel.permissionOverwrites.edit(user.id, {
-				'VIEW_CHANNEL': true,
-				'SEND_MESSAGES': true
+				'ViewChannel': true,
+				'SendMessages': true
 			})
 			ticket.users = ticket.users.concat(user.id);
 			await ticket.save();

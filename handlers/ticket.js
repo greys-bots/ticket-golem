@@ -134,17 +134,39 @@ class TicketHandler {
 			var code = tk.hid;
 			var n = name ? `${code}-${name}` : `ticket-${code}`;
 
+			var perms;
+			if(cfg?.roles?.[0]) {
+				perms = cfg.roles.map(x => ({ id: x, type: 0, allow: ['ViewChannel', 'SendMessages'] }));
+			} else {
+				var ctg = await msg.guild.channels.fetch(cfg.category_id);
+				perms = ctg.permissionOverwrites.cache.map((x) => x);
+				console.log(perms);
+			}
+			perms = [
+				...perms,
+				{
+					id: user.id,
+					type: 1,
+					allow: ['ViewChannel', 'SendMessages']
+				},
+				{
+					id: msg.guild.id, // @everyone uses the guild ID as a role ID
+					type: 0,
+					deny: ['ViewChannel']
+				}
+			]
 			var channel = await msg.guild.channels.create({
 				name: n,
 				topic: description ?? `Ticket ${code}`,
-				parent: cfg.category_id
+				parent: cfg.category_id,
+				permissionOverwrites: perms
 			})
-			await channel.lockPermissions();
-			await sleep(500);
-			await channel.permissionOverwrites.create(user.id, {
-				'ViewChannel': true,
-				'SendMessages': true
-			})
+
+			// await channel.lockPermissions(); //get perms from parent category
+			// await channel.permissionOverwrites.edit(user.id, {
+			// 	'ViewChannel': true,
+			// 	'SendMessages': true
+			// })
 			tk.channel_id = channel.id;
 
 			var mdata = {

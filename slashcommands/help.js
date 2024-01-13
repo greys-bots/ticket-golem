@@ -57,7 +57,7 @@ class Command extends SlashCommand {
 					},
 					{
 						name: "Need help? Join the support server:",
-						value: "[https://discord.gg/EvDmXGt](https://discord.gg/EvDmXGt)",
+						value: "https://discord.gg/EvDmXGt",
 						inline: true
 					},
 					{

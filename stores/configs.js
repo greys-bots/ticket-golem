@@ -8,7 +8,8 @@ const KEYS = {
 	user_limit: { patch: true },
 	ticket_limit: { patch: true },
 	mod_only: { patch: true },
-	starter: { patch: true }
+	starter: { patch: true },
+	roles: { patch: true }
 }
 
 class Config extends DataObject {
@@ -32,7 +33,8 @@ class ConfigStore extends DataStore {
 				user_limit 		INTEGER,
 				ticket_limit 	INTEGER,
 				mod_only 		TEXT[],
-				starter 		TEXT
+				starter 		TEXT,
+				roles 			TEXT[]
 			);
 		`);
 	}
@@ -46,11 +48,12 @@ class ConfigStore extends DataStore {
 				user_limit,
 				ticket_limit,
 				mod_only,
-				starter
-			) VALUES ($1,$2,$3,$4,$5,$6,$7)
+				starter,
+				roles
+			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
 			returning id`,
 			[data.server_id, data.category_id, data.archives_id, data.user_limit || 10,
-			 data.ticket_limit || 5, data.mod_only, data.starter]);
+			 data.ticket_limit || 5, data.mod_only, data.starter, data.roles]);
 		} catch(e) {
 			console.log(e);
 	 		return Promise.reject(e.message);

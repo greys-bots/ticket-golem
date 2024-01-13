@@ -30,7 +30,8 @@ class Command extends SlashCommand {
 				{name: "Archive channel ID", value: archives},
 				{name: "User Add Limit", value: cfg.user_limit == -1 ? "Unlimited" : `${cfg.user_limit ?? 10}`},
 				{name: "Concurrent Tickets Limit", value: cfg.ticket_limit == -1 ? "Unlimited" : `${cfg.ticket_limit ?? 5}`},
-				{name: "Mod-Only Commands", value: cfg.mod_only?.length ? cfg.mod_only.join("\n") : "(none)"}
+				{name: "Mod-Only Commands", value: cfg.mod_only?.length ? cfg.mod_only.join("\n") : "(none)"},
+				{name: "Mod Roles", value: cfg.roles?.[0] ? cfg.roles.map(x => `<@&${x}>`).join("\n") : "(none)"}
 			]
 		}]};
 	}
