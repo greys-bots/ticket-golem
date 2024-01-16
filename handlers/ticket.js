@@ -122,19 +122,20 @@ class TicketHandler {
 
 		if(!cfg.category_id) return Promise.reject("No ticket category set. Please have a mod set one.");
 
-		try {
-			var tk = await this.bot.stores.tickets.create({
-				server_id: msg.guild.id,
-				opener: user.id,
-				users: [user.id],
-				timestamp: time,
-				name,
-				description
-			});
-			var code = tk.hid;
-			var n = name ? `${code}-${name}` : `ticket-${code}`;
+		var tk = await this.bot.stores.tickets.create({
+			server_id: msg.guild.id,
+			opener: user.id,
+			users: [user.id],
+			timestamp: time,
+			name,
+			description
+		});
+		var code = tk.hid;
+		var n = name ? `${code}-${name}` : `ticket-${code}`;
 
-			var perms;
+		var perms;
+		var channel;
+		try {
 			if(cfg?.roles?.[0]) {
 				perms = cfg.roles.map(x => ({ id: x, type: 0, allow: ['ViewChannel', 'SendMessages'] }));
 			} else {
@@ -160,20 +161,47 @@ class TicketHandler {
 					deny: ['ViewChannel']
 				}
 			]
-			var channel = await msg.guild.channels.create({
+			channel = await msg.guild.channels.create({
 				name: n,
 				topic: description ?? `Ticket ${code}`,
 				parent: cfg.category_id,
 				permissionOverwrites: perms
 			})
 
-			// await channel.lockPermissions(); //get perms from parent category
-			// await channel.permissionOverwrites.edit(user.id, {
-			// 	'ViewChannel': true,
-			// 	'SendMessages': true
-			// })
+			await channel.lockPermissions(); //get perms from parent category
+			await channel.permissionOverwrites.edit(user.id, {
+				'ViewChannel': true,
+				'SendMessages': true
+			})
 			tk.channel_id = channel.id;
+		} catch(e) {
+			console.log(e);
+		}
 
+		if(!channel) {
+			// fall back to the old way
+			try {
+				channel = await msg.guild.channels.create({
+					name: n,
+					topic: description ?? `Ticket ${code}`,
+					parent: cfg.category_id
+				})
+
+				await channel.lockPermissions(); //get perms from parent category
+				await sleep(1000);
+				await channel.permissionOverwrites.edit(user.id, {
+					'ViewChannel': true,
+					'SendMessages': true
+				})
+				tk.channel_id = channel.id;
+			} catch(e) {
+				console.log(e);
+				await tk.delete();
+				return Promise.reject(e.message || e);
+			}
+		}
+
+		try {
 			var mdata = {
 				embeds: [{
 					title: name ?? "Untitled Ticket",
@@ -386,7 +414,7 @@ class TicketHandler {
 
 		var result = await this.createTicket({msg, user, cfg})
 		if(interaction)
-			await interaction.reply({
+			await interaction.followUp({
 				embeds: [{
 					title: "Ticket opened",
 					description: `ID: ${result.code}\nChannel: ${result.channel}`
