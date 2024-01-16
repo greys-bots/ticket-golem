@@ -398,6 +398,8 @@ class TicketHandler {
 		if(react) {
 			if(react.emoji.name != "✅") return;
 			await react.users.remove(user.id);
+		} else if(interaction) {
+			await interaction.deferReply({ ephemeral: true });
 		}
 
 		var cfg = await this.bot.stores.configs.get(msg.guild.id);
