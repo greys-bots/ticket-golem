@@ -168,11 +168,6 @@ class TicketHandler {
 				permissionOverwrites: perms
 			})
 
-			await channel.lockPermissions(); //get perms from parent category
-			await channel.permissionOverwrites.edit(user.id, {
-				'ViewChannel': true,
-				'SendMessages': true
-			})
 			tk.channel_id = channel.id;
 		} catch(e) {
 			console.log(e);
