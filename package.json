@@ -14,7 +14,7 @@
     "discord-api-types": "^0.37.67",
     "discord.js": "^14.7.1",
     "dotenv": "^8.2.0",
-    "frame": "github:greys-bots/frame",
+    "frame": "github:greys-bots/scaffold",
     "node-fetch": "^2.6.1",
     "pg": "^8.3.3"
   }

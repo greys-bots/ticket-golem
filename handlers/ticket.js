@@ -6,7 +6,7 @@ const COMPS = {
 		{
 			type: 2,
 			style: 1,
-			emoji: '✏️',
+			emoji: {name: '✏️'},
 			label: "Edit ticket",
 			custom_id: "edit",
 			disabled: true
@@ -14,14 +14,14 @@ const COMPS = {
 		{
 			type: 2,
 			style: 3,
-			emoji: '🔓',
+			emoji: {name: '🔓'},
 			label: "Open ticket",
 			custom_id: "open"
 		},
 		{
 			type: 2,
 			style: 2,
-			emoji: '📕',
+			emoji: {name: '📕'},
 			label: "Archive ticket",
 			custom_id: "archive"
 		},
@@ -30,21 +30,21 @@ const COMPS = {
 		{
 			type: 2,
 			style: 1,
-			emoji: '✏️',
+			emoji: {name: '✏️'},
 			label: "Edit ticket",
 			custom_id: "edit"
 		},
 		{
 			type: 2,
 			style: 4,
-			emoji: '🔒',
+			emoji: {name: '🔒'},
 			label: "Close ticket",
 			custom_id: "close"
 		},
 		{
 			type: 2,
 			style: 2,
-			emoji: '📕',
+			emoji: {name: '📕'},
 			label: "Archive ticket",
 			custom_id: "archive"
 		},
