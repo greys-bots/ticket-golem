@@ -57,7 +57,7 @@ class Command extends SlashCommand {
 								"## Simple, easy commands\n" +
 								"Quickly and easily add users to tickets, update a ticket's name and description, and archive or delete tickets\n" +
 								"## Dedicated archives channel\n" +
-								'Send all archives to a dedicated channel, making them easy to search and read through' +
+								'Send all archives to a dedicated channel, making them easy to search and read through\n' +
 								"## Custom starter messages\n" +
 								"Create a custom message to be sent whenever a ticket is created\n" +
 								"## Ticket creation limits\n" +
