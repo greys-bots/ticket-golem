@@ -1,4 +1,5 @@
 const { Models: { DataStore, DataObject } } = require('frame');
+const { ticketComponents: COMPS } = require('../extras');
 
 const KEYS = {
 	id: { },
@@ -36,6 +37,45 @@ class Ticket extends DataObject {
 		if(!this.resolved) this.resolved = {};
 		this.resolved.opener = opener;
 		return opener;
+	}
+
+	genEmbed(starter) {
+		let data = [];
+		if(starter) {
+			data.push({
+				type: 10,
+				content: ''
+			})
+		}
+
+		data.push({
+			type: 17,
+			accent_color: this.closed ? 0xaa5555 : 0x55aa55,
+			components: [
+				{
+					type: 10,
+					content: `# ${this.name ?? "Untitled Ticket"}\n${this.description ?? "(no description)"}`
+				},
+				{
+					type: 10,
+					content: `### Ticket Opener\n<@${this.opener}>`
+				},
+				{
+					type: 10,
+					content: `### Ticket Users\n${this.users.map(x => `<@${x}>`)}`
+				},
+				{
+					type: 10,
+					content: `-# Ticket ID: ${this.hid}`
+				}
+			]
+		},
+		{
+			type: 1,
+			components: this.closed ? COMPS.closed : COMPS.open 
+		})
+
+		return data;
 	}
 }
 

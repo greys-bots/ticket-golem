@@ -35,9 +35,14 @@ class Command extends SlashCommand {
 			return "Value set."
 		}
 
-		return {embeds: [{
-			title: "Ticket limit",
-			description: `${cfg?.ticket_limit ?? 10}`
+		return {components: [{
+			type: 17,
+			components: [{
+				type: 10,
+				content:
+					`# Ticket limit\n`+
+					(cfg?.ticket_limit ?? 10)
+			}]
 		}]}
 	}
 }

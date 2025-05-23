@@ -57,5 +57,55 @@ module.exports = {
 			desc: 'Inserts the guild name',
 			repl: ({guild}) => `${guild.name}`
 		}
+	},
+
+	ticketComponents: {
+		closed: [
+			{
+				type: 2,
+				style: 1,
+				emoji: {name: '✏️'},
+				label: "Edit ticket",
+				custom_id: "edit",
+				disabled: true
+			},
+			{
+				type: 2,
+				style: 3,
+				emoji: {name: '🔓'},
+				label: "Open ticket",
+				custom_id: "open"
+			},
+			{
+				type: 2,
+				style: 2,
+				emoji: {name: '📕'},
+				label: "Archive ticket",
+				custom_id: "archive"
+			},
+		],
+		open: [
+			{
+				type: 2,
+				style: 1,
+				emoji: {name: '✏️'},
+				label: "Edit ticket",
+				custom_id: "edit"
+			},
+			{
+				type: 2,
+				style: 4,
+				emoji: {name: '🔒'},
+				label: "Close ticket",
+				custom_id: "close"
+			},
+			{
+				type: 2,
+				style: 2,
+				emoji: {name: '📕'},
+				label: "Archive ticket",
+				custom_id: "archive"
+			},
+		]
 	}
 }

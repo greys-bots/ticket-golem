@@ -10,7 +10,8 @@ class Command extends SlashCommand {
 			description: "View the current config",
 			usage: [
 				"- View the server's current config"
-			]
+			],
+			v2: true
 		})
 		this.#bot = bot;
 		this.#stores = stores;
@@ -23,17 +24,20 @@ class Command extends SlashCommand {
 		var category = cfg.category_id ? `<#${cfg.category_id}>` : "(not set)";
 		var archives = cfg.archives_id ? `<#${cfg.archives_id}>` : "(not set)";
 
-		return {embeds: [{
-			title: "Ticket Config",
-			fields: [
-				{name: "Category ID", value: category},
-				{name: "Archive channel ID", value: archives},
-				{name: "User Add Limit", value: cfg.user_limit == -1 ? "Unlimited" : `${cfg.user_limit ?? 10}`},
-				{name: "Concurrent Tickets Limit", value: cfg.ticket_limit == -1 ? "Unlimited" : `${cfg.ticket_limit ?? 5}`},
-				{name: "Mod-Only Commands", value: cfg.mod_only?.length ? cfg.mod_only.join("\n") : "(none)"},
-				{name: "Mod Roles", value: cfg.roles?.[0] ? cfg.roles.map(x => `<@&${x}>`).join("\n") : "(none)"}
-			]
-		}]};
+		return [{components: [{
+			type: 17,
+			components: [{
+				type: 10,
+				content:
+					`# Ticket Config\n` +
+					`### Category ID\n${category}\n` +
+					`### Archive channel ID\n${archives}\n` +
+					`### User Add Limit\n${cfg.user_limit == -1 ? "Unlimited" : (cfg.user_limit ?? 10)}\n` +
+					`### Concurrent Tickets Limit\n${cfg.ticket_limit == -1 ? "Unlimited" : (cfg.ticket_limit ?? 10)}\n` +
+					`### Mod-Only Commands\n${cfg.mod_only?.length ? cfg.mod_only.join("\n") : "(none)"}\n` +
+					`### Mod Roles\n${cfg.roles?.[0] ? cfg.roles.map(x => `<@&${x}>`).join("\n") : "(none)"}`
+			}]
+		}]}];
 	}
 }
 

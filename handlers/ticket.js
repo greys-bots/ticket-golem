@@ -1,55 +1,5 @@
 const { AttachmentBuilder, PermissionFlagsBits: BITS } = require("discord.js");
-const { starterVars: KEYS } = require('../extras');
-
-const COMPS = {
-	closed: [
-		{
-			type: 2,
-			style: 1,
-			emoji: {name: '✏️'},
-			label: "Edit ticket",
-			custom_id: "edit",
-			disabled: true
-		},
-		{
-			type: 2,
-			style: 3,
-			emoji: {name: '🔓'},
-			label: "Open ticket",
-			custom_id: "open"
-		},
-		{
-			type: 2,
-			style: 2,
-			emoji: {name: '📕'},
-			label: "Archive ticket",
-			custom_id: "archive"
-		},
-	],
-	open: [
-		{
-			type: 2,
-			style: 1,
-			emoji: {name: '✏️'},
-			label: "Edit ticket",
-			custom_id: "edit"
-		},
-		{
-			type: 2,
-			style: 4,
-			emoji: {name: '🔒'},
-			label: "Close ticket",
-			custom_id: "close"
-		},
-		{
-			type: 2,
-			style: 2,
-			emoji: {name: '📕'},
-			label: "Archive ticket",
-			custom_id: "archive"
-		},
-	]
-}
+const { starterVars: KEYS, ticketComponents: COMPS } = require('../extras');
 
 async function sleep(ms) {
 	return new Promise((res, rej) => {
@@ -197,25 +147,7 @@ class TicketHandler {
 		}
 
 		try {
-			var mdata = {
-				embeds: [{
-					title: name ?? "Untitled Ticket",
-					description: description ?? "(no description)",
-					fields: [
-						{name: "Ticket Opener", value: `${user}`},
-						{name: "Ticket Users", value: `${user}`}
-					],
-					color: 0x55aa55,
-					footer: {
-						text: "Ticket ID: "+code
-					},
-					timestamp: time
-				}],
-				components: [{
-					type: 1,
-					components: COMPS.open
-				}]
-			}
+			var cdata = tk.genEmbed(true)
 
 			if(cfg.starter) {
 				var tmp = cfg.starter;
@@ -226,15 +158,18 @@ class TicketHandler {
 					}))
 				}
 
-				mdata.content = tmp;
+				cdata[0].content = tmp;
 			} else {
-				mdata.content =
+				cdata[0].content = 
 					`Thank you for opening a ticket, ${user}. ` +
 					`You can chat with support staff here.\n` +
 					`React or interact below for options.`;
 			}
 
-			var message = await channel.send(mdata)
+			var message = await channel.send({
+				flags: ['IsComponentsV2'],
+				components: cdata
+			})
 			message.pin();
 			tk.first_message = message.id;
 			await tk.save();
@@ -270,30 +205,9 @@ class TicketHandler {
 					`\nand ${ticket.users.length - 20} more`;
 			} else users = ticket.users.map(u => `<@${u}>`).join("\n");
 
+			var cdata = ticket.genEmbed();
 			await message.edit({
-				embeds: [{
-					title: ticket.name ?? "Untitled Ticket",
-					description: ticket.description ?? "(no description)",
-					fields: [
-						{
-							name: "Ticket Opener",
-							value: `<@${ticket.opener}>`
-						},
-						{
-							name: "Ticket Users",
-							value: users
-						}
-					],
-					color: ticket.closed ? 0xaa5555 : 0x55aa55,
-					footer: {
-						text: `Ticket ID: ${ticket.hid}`
-					},
-					timestamp: ticket.timestamp
-				}],
-				components: [{
-					type: 1,
-					components: ticket.closed ? COMPS.closed : COMPS.open
-				}]
+				components: cdata
 			})
 
 			await channel.edit({
@@ -354,27 +268,60 @@ class TicketHandler {
 			var date = new Date();
 
 			var embed = {
-				title: "Ticket Archive",
-				fields: [
-					{name: "Ticket name", value: ticket.name || "Untitled Ticket"},
-					{name: "Ticket description", value: ticket.description || "(no description)"},
-					{name: "Time opened", value: this.formatTime(new Date(ticket.timestamp))},
-					{name: "Opener", value: `${ticket.resolved.opener.username}#${ticket.resolved.opener.discriminator} (${ticket.resolved.opener.id})`},
-					{name: "Users involved", value: ticket.resolved.users.map(u => `${u.username}#${u.discriminator} (${u.id})`).join("\n")},
-					{name: "Time closed", value: this.formatTime(date)}
-				],
-				timestamp: date.toISOString(),
-				color: 5821280
+				type: 17,
+				accent_color: 5821280,
+				components: [
+					{
+						type: 10,
+						content:
+							`# Ticket Archive\n` +
+							`### Ticket name\n${ticket.name ?? "Untitled Ticket"}\n` +
+							`### Ticket description\n${ticket.description ?? '(no description)'}\n` +
+							`### Opener\n${ticket.resolved.opener.username}#${ticket.resolved.opener.discriminator} (${ticket.resolved.opener.id})\n` +
+							`### Users involved\n${ticket.resolved.users.map(u => `${u.username}#${u.discriminator} (${u.id})`).join("\n")}`
+					},
+					{
+						type: 14
+					},
+					{
+						type: 10,
+						content: `-# Opened: ${this.formatTime(new Date(ticket.timestamp))} | Closed: ${this.formatTime(date)}`
+					}
+				]
 			};
 
 			var c;
 			if(!cfg?.archives_id) {
-				await user.send({embeds: [embed], files: [file]})
+				await user.send({
+					flags: ['IsComponentsV2'],
+					components: [
+						embed,
+						{
+							type: 13,
+							file: {
+								url: `attachment://${channel.name}.txt`
+							}
+						}
+					],
+					files: [file]
+				})
 			} else {
 				c = await channel.guild.channels.fetch(cfg.archives_id);
 				if(!c) return "Couldn't find your archives channel; please reconfigure it.";
 				
-				await c.send({embeds: [embed], files: [file]});
+				await c.send({
+					flags: ['IsComponentsV2'],
+					components: [
+						embed,
+						{
+							type: 13,
+							file: {
+								url: `attachment://${channel.name}.txt`
+							}
+						}
+					],
+					files: [file]
+				});
 			}
 				
 			await channel.delete("Ticket archived.");
@@ -412,9 +359,16 @@ class TicketHandler {
 		var result = await this.createTicket({msg, user, cfg})
 		if(interaction)
 			await interaction.followUp({
-				embeds: [{
-					title: "Ticket opened",
-					description: `ID: ${result.code}\nChannel: ${result.channel}`
+				flags: ['IsComponentsV2'],
+				components: [{
+					type: 17,
+					accent_color: 0x55aa55,
+					components: [{
+						type: 10,
+						content:
+							`# Ticket opened\n` +
+							`**ID:** ${result.code} | **Channel:** ${result.channel}`
+					}]
 				}],
 				ephemeral: true
 			});
@@ -429,22 +383,6 @@ class TicketHandler {
 		if(!cfg) return;
 
 		var member = await msg.guild.members.fetch(user);
-
-		var embed = msg.embeds[0];
-		if(!embed) embed = {
-			title: ticket.name,
-			description: ticket.description,
-			fields: [
-				{name: "Ticket Opener", value: `<@${ticket.opener}>`},
-				{name: "TIcket Users", value: ticket.users.map(u => `<@${u}>`).join("\n")},
-			],
-			color: 2074412,
-			footer: {
-				text: "Ticket ID: "+ticket.hid
-			},
-			timestamp: ticket.timestamp
-		}
-
 		var action = interaction.customId;
 
 		var resp;

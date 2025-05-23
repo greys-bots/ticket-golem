@@ -18,7 +18,8 @@ class Command extends SlashCommand {
 			usage: [
 				"- View config",
 				" [category] - Set a new ticket category"
-			]
+			],
+			v2: true
 		})
 		this.#bot = bot;
 		this.#stores = stores;
@@ -29,12 +30,17 @@ class Command extends SlashCommand {
 		var category = ctx.options.getChannel('category');
 
 		if(!category) {
-			return {embeds: [{
-				title: "Ticket category",
-				description: cfg?.category_id ? `<#${cfg.category_id}>` : "(not set)"
+			return {components: [{
+				type: 17,
+				components: [{
+					type: 10,
+					content:
+						`# Tickets category\n`+
+						(cfg?.category_id ? `<#${cfg.category_id}>` : "(not set)")
+				}]
 			}]}
 		}
-		
+
 		cfg.category_id = category.id;
 		await cfg.save();
 		return "Category set."

@@ -19,7 +19,8 @@ class Command extends SlashCommand {
 				'[ticket] - View info for a specific ticket'
 			],
 			permissions: ['ManageChannels'],
-			ephemeral: true
+			ephemeral: true,
+			v2: true
 		})
 		this.#bot = bot;
 		this.#stores = stores;
@@ -34,12 +35,7 @@ class Command extends SlashCommand {
 
 		var embeds = [];
 		for(var t of tickets) {
-			embeds.push(ctx.client.utils.genTicketEmbed(t))
-		}
-
-		if(embeds.length > 1) {
-			for(var i = 0; i < embeds.length; i++)
-				embeds[i].title += ` (${i+1}/${embeds.length})`;
+			embeds.push({components: t.genEmbed()})
 		}
 		
 		return embeds;

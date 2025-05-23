@@ -10,7 +10,8 @@ class Command extends SlashCommand {
 			description: "View the server's mod roles",
 			usage: [
 				"- Views the server's mod roles"
-			]
+			],
+			v2: true
 		})
 		this.#bot = bot;
 		this.#stores = stores;
@@ -19,10 +20,17 @@ class Command extends SlashCommand {
 	async execute(ctx) {
 		var cfg = await ctx.client.stores.configs.get(ctx.guild.id);
 
-		return {embeds: [{
-			title: "Server Mod Roles",
-			description: cfg?.roles?.map(x => `<@&${x}>`).join("\n") ?? "(None set)"
-		}]}
+		return {
+			components: [{
+				type: 17,
+				components: [{
+					type: 10,
+					content:
+						`#Server mod roles\n` +
+						cfg?.roles?.map(x => `<@&${x}>`).join("\n") ?? "(None set)"
+				}]
+			}] 
+		}
 	}
 }
 

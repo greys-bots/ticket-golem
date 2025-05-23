@@ -25,7 +25,8 @@ class Command extends SlashCommand {
 			usage: [
 				'<name> <description> - Create a new ticket with an optional name and description'
 			],
-			ephemeral: true
+			ephemeral: true,
+			v2: true
 		})
 		this.#bot = bot;
 		this.#stores = stores;
@@ -44,11 +45,16 @@ class Command extends SlashCommand {
 
 		var result = await this.#bot.handlers.ticket.createTicket({msg: ctx, user: ctx.user, cfg, name, description})
 		return {
-			embeds: [{
-				title: "Ticket opened",
-				description: `ID: ${result.code}\nChannel: ${result.channel}`
-			}],
-			ephemeral: true
+			components: [{
+				type: 17,
+				accent_color: 0x55aa55,
+				components: [{
+					type: 10,
+					content:
+						`# Ticket opened\n` +
+						`**ID:** ${result.code} | **Channel:** ${result.channel}`
+				}]
+			}]
 		}
 	}
 }

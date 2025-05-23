@@ -38,6 +38,7 @@ class Command extends SlashCommand {
 				"[command] value:false - Make a command usable by users"
 			],
 			extra: "This command doesn't affect commands that are already only usable by mods",
+			v2: true
 		})
 		this.#bot = bot;
 		this.#stores = stores;
@@ -50,9 +51,14 @@ class Command extends SlashCommand {
 		var val = ctx.options.getBoolean('value');
 
 		if(!command) {
-			return {embeds: [{
-				title: "Mod-only commands",
-				description: cfg.mod_only.join("\n")
+			return {components: [{
+				type: 17,
+				components: [{
+					type: 10,
+					content:
+						`# Mod-only commands\n`+
+						(cfg.mod_only?.length ? cfg.mod_only.join("\n") : "(none)")
+				}]
 			}]}
 		}
 

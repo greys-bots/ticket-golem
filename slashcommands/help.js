@@ -22,7 +22,8 @@ class Command extends SlashCommand {
 			],
 			extra: "Examples:\n"+
 				   "`/help command:form` - Shows form module help",
-			ephemeral: true
+			ephemeral: true,
+			v2: true
 		})
 
 		this.#bot = bot;
@@ -36,68 +37,103 @@ class Command extends SlashCommand {
 		var cmds;
 		if(!cn) {
 			embeds = [{
-				title: "I'm the Ticket Golem",
-				description: "I assist with creating private support tickets in servers. Here are some of my features:",
-				fields: [
-					{
-						name: 'Simple, easy commands',
-						value: "Quickly and easily add users to tickets, update a ticket's name and description, and archive or delete tickets"
-					},
-					{
-						name: 'Dedicated archives channel',
-						value: "Send all archives to a dedicated channel, making them easy to search and read through"
-					},
-					{
-						name: 'Custom starter messages',
-						value: "Create a custom message to be sent whenever a ticket is created"
-					},
-					{
-						name: 'Ticket creation limits',
-						value: "Limit the number of tickets that users can open in a server, preventing ticket spam"
-					},
-					{
-						name: "Need help? Join the support server:",
-						value: "https://discord.gg/EvDmXGt",
-						inline: true
-					},
-					{
-						name: "Support my creators:",
-						value: 
-							"[Patreon](https://patreon.com/greysdawn) | " +
-							"[Ko-fi](https://ko-fi.com/greysdawn)",
-						inline: true
-					}
-				],
-				color: 0x8A8A8A,
-				footer: {
-					icon_url: this.#bot.user.avatarURL(),
-					text: "Use the buttons below to flip pages."
-				}
-			}]
-
+				components: [{
+					type: 17,
+					accent_color: 0x8A8A8A,
+					components: [
+						{
+							type: 10,
+							content: `-# Command Help`
+						},
+						{
+							type: 14,
+							spacing: 2
+						},
+						{
+							type: 10,
+							content:
+								"# I'm the Ticket Golem\n" +
+								"I assist with creating private support tickets in servers. Here are some of my features:\n" +
+								"## Simple, easy commands\n" +
+								"Quickly and easily add users to tickets, update a ticket's name and description, and archive or delete tickets\n" +
+								"## Dedicated archives channel\n" +
+								'Send all archives to a dedicated channel, making them easy to search and read through' +
+								"## Custom starter messages\n" +
+								"Create a custom message to be sent whenever a ticket is created\n" +
+								"## Ticket creation limits\n" +
+								'Limit the number of tickets that users can open in a server, preventing ticket spam'
+						},
+						{
+							type: 14,
+							spacing: 2
+						},
+						{
+							type: 1,
+							components: [
+								{
+									type: 2,
+									style: 5,
+									label: 'Support Server',
+									url: 'https://discord.gg/EvDmXGt'
+								},
+								{
+									type: 2,
+									style: 5,
+									label: 'Patreon',
+									url: 'https://patreon.com/greysdawn'
+								},
+								{
+									type: 2,
+									style: 5,
+									label: 'Ko-Fi',
+									url: 'https://ko-fi.com/greysdawn'
+								},
+							],
+						}
+					]	
+				}]
+			}];
+			
 			var mods = this.#bot.slashCommands.map(m => m).filter(m => m.subcommands.size);
 			var ug = this.#bot.slashCommands.map(m => m).filter(m => !m.subcommands.size);
-			for(var m of mods) {
-				var e = {
-					title: m.name.toUpperCase(),
-					description: m.description
+			for(let m of mods) {
+				let e = {
+					components: [{
+						type: 17,
+						accent_color: 0x8A8A8A,
+						components: [{
+							type: 10,
+							content: `# ${m.name.toUpperCase()}\n${m.description}`
+						}]
+					}]
 				}
 
 				cmds = m.subcommands.map(o => o);
-				var tmp = await this.#bot.utils.genEmbeds(this.#bot, cmds, (c) => {
-					return {name: `/${m.name} ${c.name}`, value: c.description}
-				}, e, 10, {addition: ""})
-				embeds = embeds.concat(tmp.map(e => e.embed))
+				cmds.forEach(c => {
+					e.components[0].components.push({
+						type: 10,
+						content: `### /${m.name} ${c.name}\n${c.description}`
+					})
+				})
+				embeds.push(e);
 			}
 
 			if(ug?.[0]) {
 				var e = {
-					title: "UNGROUPED",
-					description: "Miscellaneous commands",
-					fields: []
+					components: [{
+						type: 17,
+						accent_color: 0x8A8A8A,
+						components: [{
+							type: 10,
+							content: `# UNGROUPED\nMiscellaneous commands`
+						}]
+					}]
 				}
 
-				for(var c of ug) e.fields.push({name: '/' + c.name, value: c.description});
+				for(var c of ug) e.components[0].components.push({
+					type: 10,
+					content: `### /${c.name}\n${c.description}`
+				});
 				embeds.push(e)
 			}
 		} else {
@@ -106,7 +142,7 @@ class Command extends SlashCommand {
 			var cm;
 			if(mod) {
 				cm = this.#bot.slashCommands.get(mod);
-				if(!cm) return "Module not found.";
+				if(!cm) return "Module not found!";
 				cmds = cm.subcommands.map(o => o);
 			} else {
 				cmds = this.#bot.slashCommands.map(c => c);
@@ -114,47 +150,66 @@ class Command extends SlashCommand {
 
 			if(cmd) {
 				cm = cmds.find(c => (c.name ?? c.name) == cmd);
-				if(!cm) return "Command not found.";
+				if(!cm) return "Command not found!";
 				cmds = cm.subcommands?.map(o => o);
 
 				if(scmd) {
 					cm = cmds?.find(c => (c.name ?? c.name) == scmd);
-					if(!cm) return "Subcommand not found.";
+					if(!cm) return "Subcommand not found!";
 				}
 			}
 
 			if(cm.subcommands?.size) {
-				embeds = await this.#bot.utils.genEmbeds(this.#bot, cm.subcommands.map(c => c), (c) => {
-					return {name: `**/${name.trim()} ${c.name}**`, value: c.description}
-				}, {
-					title: name.toUpperCase(),
-					description: cm.description,
-					color: 0x8A8A8A
-				}, 10, {addition: ""})
-				embeds = embeds.map(e => e.embed);
-			} else {
-				embeds = [{
-					title: name,
-					description: cm.description,
-					fields: [],
-					color: 0x8A8A8A
-				}]
+				let e = {
+					components: [{
+						type: 17,
+						accent_color: 0x8A8A8A,
+						components: [{
+							type: 10,
+							content: `# ${name.toUpperCase()}\n${cm.description}`
+						}]
+					}]
+				}
 
-				if(cm.usage?.length) embeds[embeds.length - 1].fields.push({
-					name: "Usage",
-					value: cm.usage.map(u => `/${name.trim()} ${u}`).join("\n")
+				cm.subcommands.map(o => o).forEach(c => {
+					e.components[0].components.push({
+						type: 10,
+						content: `### /${name.trim()} ${c.name}\n${c.description}`
+					})
 				})
 
-				if(cm.extra?.length) embeds[embeds.length - 1].fields.push({
-					name: "Extra",
-					value: cm.extra
-				});
+				embeds = [e];
+			} else {
+				let e = {
+					components: [{
+						type: 17,
+						accent_color: 0x8A8A8A,
+						components: [{
+							type: 10,
+							content: `# /${name}\n${cm.description}`
+						}]
+					}]
+				}
+
+				if(cm.usage?.length) e.components[0].components.push({
+					type: 10,
+					content: `### Usage\n` + cm.usage.map(u => `/${name.trim()} ${u}`).join("\n")
+				})
+
+				if(cm.extra?.length) e.components[0].components.push({
+					type: 10,
+					content: `### Extra\n` + cm.extra
+				})
+
+				if(cm.permissions?.length) e.components[0].components.push({
+					type: 10,
+					content: `### Permissions\n` + cm.permissions.join(", ")
+				})
+
+				embeds = [e];
 			}	
 		}
 
-		if(embeds.length > 1)
-			for(var i = 0; i < embeds.length; i++)
-				embeds[i].title += ` (${i+1}/${embeds.length})`;
 		return embeds;
 	}
 

@@ -35,9 +35,14 @@ class Command extends SlashCommand {
 			return "Value set."
 		}
 
-		return {embeds: [{
-			title: "User limit",
-			description: `${cfg?.user_limit ?? 10}`
+		return {components: [{
+			type: 17,
+			components: [{
+				type: 10,
+				content:
+					`# User limit\n`+
+					(cfg?.user_limit ?? 10)
+			}]
 		}]}
 	}
 }

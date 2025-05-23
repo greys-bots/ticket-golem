@@ -52,9 +52,14 @@ class Command extends SlashCommand {
 
 		var channel;
 		var embed = {
-			title: "Start Ticket",
-			description: "React with ✅ or interact below to open a ticket.",
-			color: 0x55aa55
+			type: 17,
+			accent_color: 0x55aa55,
+			components: [{
+				type: 10,
+				content:
+					`# Start Ticket\n`+
+					"React with ✅ or interact below to open a ticket."
+			}]
 		}
 
 		sel = await ctx.client.utils.awaitChannelSelect(ctx, {
@@ -69,17 +74,20 @@ class Command extends SlashCommand {
 
 		try {
 			var message = await channel.send({
-				embeds: [embed],
-				components: [{
-					type: 1,
-					components: [{
-						type: 2,
-						style: 3,
-						emoji: {name: '✅'},
-						label: 'Open ticket',
-						custom_id: 'opener'
-					}]
-				}]
+				flags: ['IsComponentsV2'],
+				components: [
+					embed,
+					{
+						type: 1,
+						components: [{
+							type: 2,
+							style: 3,
+							emoji: {name: '✅'},
+							label: 'Open ticket',
+							custom_id: 'opener'
+						}]
+					}
+				]
 			});
 
 			var post = await ctx.client.stores.posts.create({

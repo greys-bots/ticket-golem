@@ -41,15 +41,20 @@ class Command extends SlashCommand {
 
 		if(!cfg?.starter) return "No custom starter message set.";
 
-		var data = {
-			embeds: [{
-				title: "Current message",
-				description: cfg.starter
-			}],
-			components: [{ type: 1, components: clearButtons }]
-		}
-
-		var reply = await ctx.reply({...data, fetchReply: true});
+		var reply = await ctx.reply({
+			flags: ['IsComponentsV2'],
+			components: [
+				{
+					type: 17,
+					components: [{
+						type: 10,
+						content: `# Current message\n${cfg.starter ?? "(none set)"}`
+					}]
+				},
+				{ type: 1, components: clearButtons }
+			],
+			fetchReply: true
+		});
 		var conf = await ctx.client.utils.getConfirmation(ctx.client, reply, ctx.user);
 		var msg;
 		if(conf.msg) {
@@ -61,27 +66,35 @@ class Command extends SlashCommand {
 
 		if(conf.interaction) {
 			await conf.interaction.update({
-				content: msg,
-				embeds: [],
-				components: [{
-					type: 1,
-					components: clearButtons.map(b => {
-						b.disabled = true;
-						return b;
-					})
-				}]
+				components: [
+					{
+						type: 10,
+						content: msg
+					},
+					{
+						type: 1,
+						components: clearButtons.map(b => {
+							b.disabled = true;
+							return b;
+						})
+					}
+				]
 			})
 		} else {
 			await ctx.editReply({
-				content: msg,
-				embeds: [],
-				components: [{
-					type: 1,
-					components: clearButtons.map(b => {
-						b.disabled = true;
-						return b;
-					})
-				}]
+				components: [
+					{
+						type: 10,
+						content: msg
+					},
+					{
+						type: 1,
+						components: clearButtons.map(b => {
+							b.disabled = true;
+							return b;
+						})
+					}
+				]
 			})
 		}
 		return;

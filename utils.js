@@ -61,35 +61,6 @@ module.exports = {
 			res(embeds);
 		})
 	},
-	genTicketEmbed: (ticket) => {
-		var users;
-		if(ticket.users.length > 20) {
-			users = ticket.users.slice(0, 21)
-				.map(u => `<@${u.id}>`)
-				.join("\n") +
-				`\nand ${ticket.users.length - 20} more`;
-		} else users = ticket.users.map(u => `<@${u.id}>`).join("\n");
-		
-		return {
-			title: ticket.name ?? "Untitled Ticket",
-			description: ticket.description ?? "(no description)",
-			fields: [
-				{
-					name: "Ticket Opener",
-					value: `<@${ticket.opener.id}>`
-				},
-				{
-					name: "Ticket Users",
-					value: users
-				}
-			],
-			color: ticket.closed ? 0xaa5555 : 0x55aa55,
-			footer: {
-				text: `Ticket ID: ${ticket.hid}`
-			},
-			timestamp: ticket.timestamp
-		}
-	},
 	async checkTicketPerms(ctx) {
 		var {
 			msg,

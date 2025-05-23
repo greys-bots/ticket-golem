@@ -46,7 +46,8 @@ class Command extends SlashCommand {
 				"(a mix of above) - Find tickets matching all criteria"
 			],
 			extra: "Search terms look through the ticket's name and description, NOT messages sent within them.",
-			permissions: ["ManageChannels"]
+			permissions: ["ManageChannels"],
+			v2: true
 		})
 		this.#bot = bot;
 		this.#stores = stores;
@@ -67,12 +68,7 @@ class Command extends SlashCommand {
 
 		var embeds = [];
 		for(var t of tickets) {
-			embeds.push(ctx.client.utils.genTicketEmbed(t))
-		}
-
-		if(embeds.length > 1) {
-			for(var i = 0; i < embeds.length; i++)
-				embeds[i].title += ` (${i+1}/${embeds.length})`;
+			embeds.push({components: t.genEmbed()})
 		}
 		
 		return embeds;

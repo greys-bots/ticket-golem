@@ -18,7 +18,8 @@ class Command extends SlashCommand {
 			usage: [
 				"- View config",
 				" [channel] - Set a new archives channel"
-			]
+			],
+			v2: true
 		})
 		this.#bot = bot;
 		this.#stores = stores;
@@ -29,9 +30,14 @@ class Command extends SlashCommand {
 		var channel = ctx.options.getChannel('channel');
 
 		if(!channel) {
-			return {embeds: [{
-				title: "Archives channel",
-				description: cfg?.archives_id ? `<#${cfg.archives_id}>` : "(not set)"
+			return {components: [{
+				type: 17,
+				components: [{
+					type: 10,
+					content:
+						`# Archives channel\n`+
+						(cfg?.archives_id ? `<#${cfg.archives_id}>` : "(not set)")
+				}]
 			}]}
 		}
 
